@@ -8,7 +8,7 @@
     <script src="/navigation/nav.js" defer></script>
 </head>
 <body>
-    <!-- Navigation -->
+<!-- Navigation -->
 <!-- Goo filter for the dock (include once) -->
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <filter id="fn-goo">
@@ -21,18 +21,19 @@
 <!-- Top bar -->
 <header class="fnav" id="fnav">
   <a class="fnav-brand" href="/">
-    <span class="fnav-mark"><svg class="fn-icon" viewBox="0 0 24 24" style="width:14px;height:14px;stroke:#fff;stroke-width:2.4"><path d="M9 6l6 6-6 6"/></svg></span>
+    <!-- <span class="fnav-mark"><svg class="fn-icon" viewBox="0 0 24 24" style="width:14px;height:14px;stroke:#fff;stroke-width:2.4"><path d="M9 6l6 6-6 6"/></svg></span> -->
+   <!-- LOGO/NAME -->
     dProj
   </a>
   <nav class="fnav-links" id="fnavLinks" aria-label="Primary">
     <span class="fnav-pill" aria-hidden="true"></span>
-    <a href="/" aria-current="page">Home</a>
-    <a href="/">Calender</a>
+    <a href="/home.html" aria-current="page">Home</a>
+    <a href="/calendar.html">Calender</a>
     <a href="/allLists.html">Lists</a>
-    <a href="/">Daily Logs</a>
+    <a href="/dailyLogs.html">Daily Logs</a>
   </nav>
   <div class="fnav-actions">
-    <a class="fnav-btn fnav-btn--ghost" href="/login">Log in</a>
+    <a class="fnav-btn fnav-btn--ghost" href="/login">Login</a>
     <a class="fnav-btn fnav-btn--primary" href="/signup">Sign up</a>
   </div>
 </header>
@@ -43,25 +44,26 @@
   <div class="dock-items">
     <!-- Home -->
     <a href="/" aria-current="page" aria-label="Home">
-      <svg class="fn-icon" viewBox="0 0 24 24"><path d="M12 3.5 3.8 9.4l3.1 10.1h10.2l3.1-10.1z"/><path d="M10 15.5h4"/></svg>
+      <svg class="fn-icon" viewBox="0 0 24 24"><path d="M4 11.2 12 4l8 7.2"/><path d="M6 9.8v9.7h12V9.8"/><path d="M10 19.5v-5h4v5"/></svg>
       <span class="dock-tip">Home</span>
     </a>
-    <!-- Calender -->
-    <a href="/" aria-label="Calendar">
+    <!-- Calendar -->
+    <a href="/calendar.html" aria-label="Calendar">
       <svg class="fn-icon" viewBox="0 0 24 24"><rect x="4" y="5.5" width="16" height="14.5" rx="3"/><path d="M8 3.5v4M16 3.5v4M4 10.5h16"/></svg>
       <span class="dock-tip">Calendar</span>
     </a>
     <!-- Lists -->
     <a href="/allLists.html" aria-label="Lists">
-      <svg class="fn-icon" viewBox="0 0 24 24"><circle cx="12" cy="7" r="2.6"/><circle cx="5.5" cy="12" r="2.1"/><circle cx="18.5" cy="12" r="2.1"/><path d="M8.5 19c.6-2.3 2-3.5 3.5-3.5s2.9 1.2 3.5 3.5"/></svg>
+      <svg class="fn-icon" viewBox="0 0 24 24"><circle cx="5" cy="6.5" r="1.1"/><circle cx="5" cy="12" r="1.1"/><circle cx="5" cy="17.5" r="1.1"/><path d="M9.5 6.5H20M9.5 12H20M9.5 17.5H20"/></svg>
       <span class="dock-tip">Lists</span>
     </a>
     <!-- Daily Logs -->
-    <a href="/dailyLogs" aria-label="Daily Logs">
-      <svg class="fn-icon" viewBox="0 0 24 24"><rect x="4" y="5.5" width="16" height="14.5" rx="3"/><path d="M8 3.5v4M16 3.5v4M4 10.5h16"/></svg>
+    <a href="/dailyLogs.html" aria-label="Daily Logs">
+      <svg class="fn-icon" viewBox="0 0 24 24"><rect x="5" y="3.5" width="14" height="17" rx="2.5"/><path d="M9 3.5v17M12.5 8.5H16M12.5 12H16"/></svg>
       <span class="dock-tip">Daily Logs</span>
     </a>
-    <a href="/" aria-label="Messages">
+    <!-- Messages -->
+    <a href="/messages.html" aria-label="Messages">
       <svg class="fn-icon" viewBox="0 0 24 24"><path d="M20 12a8 8 0 0 1-11.6 7.1L4 20l.9-4.4A8 8 0 1 1 20 12z"/><path d="M9 11h6M9 14h4"/></svg>
       <span class="dock-tip">Messages</span>
     </a>
@@ -72,7 +74,7 @@
   <div class="dock-menu" id="dockMenu" role="menu">
     <button role="menuitem">New Event</button>
     <button role="menuitem">New List</button>
-    <button role="menuitem">New Daily Log</button>
+    <button role="menuitem"> <a href="/newList.html">New Daily Log</a> </button>
   </div>
 </nav>
 
