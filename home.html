@@ -4,16 +4,77 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>dProj</title>
+    <link href="/navigation/nav.css" rel="stylesheet">
+    <script src="/navigation/nav.js" defer></script>
 </head>
 <body>
     <!-- Navigation -->
-    <h1>Project D</h1>
-    <button>
-        <a href="allLists.html">Lists</a>
+<!-- Goo filter for the dock (include once) -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <filter id="fn-goo">
+    <feGaussianBlur in="SourceGraphic" stdDeviation="8" result="b"/>
+    <feColorMatrix in="b" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 22 -10" result="g"/>
+    <feComposite in="SourceGraphic" in2="g" operator="atop"/>
+  </filter>
+</svg>
+
+<!-- Top bar -->
+<header class="fnav" id="fnav">
+  <a class="fnav-brand" href="/">
+    <span class="fnav-mark"><svg class="fn-icon" viewBox="0 0 24 24" style="width:14px;height:14px;stroke:#fff;stroke-width:2.4"><path d="M9 6l6 6-6 6"/></svg></span>
+    dProj
+  </a>
+  <nav class="fnav-links" id="fnavLinks" aria-label="Primary">
+    <span class="fnav-pill" aria-hidden="true"></span>
+    <a href="/" aria-current="page">Home</a>
+    <a href="/">Calender</a>
+    <a href="allLists.html">Lists</a>
+    <a href="/pricing">Daily Lods</a>
+  </nav>
+  <div class="fnav-actions">
+    <a class="fnav-btn fnav-btn--ghost" href="/login">Log in</a>
+    <a class="fnav-btn fnav-btn--primary" href="/signup">Sign up</a>
+  </div>
+</header>
+
+<!-- Bottom dock -->
+<nav class="dock" id="dock" aria-label="Quick navigation">
+  <div class="dock-shape" aria-hidden="true"><span class="dock-bar"></span><span class="dock-blob"></span></div>
+  <div class="dock-items">
+    <!-- Home -->
+    <a href="/" aria-current="page" aria-label="Home">
+      <svg class="fn-icon" viewBox="0 0 24 24"><path d="M12 3.5 3.8 9.4l3.1 10.1h10.2l3.1-10.1z"/><path d="M10 15.5h4"/></svg>
+      <span class="dock-tip">Home</span>
+    </a>
+    <!-- Calender -->
+    <a href="/calendar" aria-label="Calendar">
+      <svg class="fn-icon" viewBox="0 0 24 24"><rect x="4" y="5.5" width="16" height="14.5" rx="3"/><path d="M8 3.5v4M16 3.5v4M4 10.5h16"/></svg>
+      <span class="dock-tip">Calendar</span>
+    </a>
+    <!-- Lists -->
+    <a href="/team" aria-label="Lists">
+      <svg class="fn-icon" viewBox="0 0 24 24"><circle cx="12" cy="7" r="2.6"/><circle cx="5.5" cy="12" r="2.1"/><circle cx="18.5" cy="12" r="2.1"/><path d="M8.5 19c.6-2.3 2-3.5 3.5-3.5s2.9 1.2 3.5 3.5"/></svg>
+      <span class="dock-tip">Lists</span>
+    </a>
+    <!-- Daily Logs -->
+    <a href="/calendar" aria-label="Daily Logs">
+      <svg class="fn-icon" viewBox="0 0 24 24"><rect x="4" y="5.5" width="16" height="14.5" rx="3"/><path d="M8 3.5v4M16 3.5v4M4 10.5h16"/></svg>
+      <span class="dock-tip">Daily Logs</span>
+    </a>
+    <a href="/messages" aria-label="Messages">
+      <svg class="fn-icon" viewBox="0 0 24 24"><path d="M20 12a8 8 0 0 1-11.6 7.1L4 20l.9-4.4A8 8 0 1 1 20 12z"/><path d="M9 11h6M9 14h4"/></svg>
+      <span class="dock-tip">Messages</span>
+    </a>
+    <button class="dock-fab" id="dockFab" aria-label="Create" aria-expanded="false" aria-controls="dockMenu">
+      <svg class="fn-icon" viewBox="0 0 24 24" style="stroke-width:2"><path d="M12 5v14M5 12h14"/></svg>
     </button>
-    <button>
-        <a href="dailyLog.html">Daily Log</a>
-    </button>
+  </div>
+  <div class="dock-menu" id="dockMenu" role="menu">
+    <button role="menuitem">New Event</button>
+    <button role="menuitem">New List</button>
+    <button role="menuitem">New Daily Log</button>
+  </div>
+</nav>
 
 </body>
 </html>
