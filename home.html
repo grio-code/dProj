@@ -6,6 +6,7 @@
     <title>dProj</title>
     <link href="/navigation/nav.css" rel="stylesheet">
     <script src="/navigation/nav.js" defer></script>
+    <link href="/lists/list.css" rel="stylesheet">
 </head>
 <body>
 <!-- Navigation -->
@@ -29,7 +30,7 @@
     <span class="fnav-pill" aria-hidden="true"></span>
     <a href="/home.html" aria-current="page">Home</a>
     <a href="/calendar.html">Calender</a>
-    <a href="/allLists.html">Lists</a>
+    <a href="/Lists/allLists.html">Lists</a>
     <a href="/dailyLog.html">Daily Logs</a>
   </nav>
   <div class="fnav-actions">
@@ -53,7 +54,7 @@
       <span class="dock-tip">Calendar</span>
     </a>
     <!-- Lists -->
-    <a href="/allLists.html" aria-label="Lists">
+    <a href="Lists/allLists.html" aria-label="Lists">
       <svg class="fn-icon" viewBox="0 0 24 24"><circle cx="5" cy="6.5" r="1.1"/><circle cx="5" cy="12" r="1.1"/><circle cx="5" cy="17.5" r="1.1"/><path d="M9.5 6.5H20M9.5 12H20M9.5 17.5H20"/></svg>
       <span class="dock-tip">Lists</span>
     </a>
@@ -73,8 +74,8 @@
   </div>
   <div class="dock-menu" id="dockMenu" role="menu">
     <button role="menuitem">New Event</button>
-    <button role="menuitem">New List</button>
-    <button role="menuitem"> <a href="/newList.html">New Daily Log</a> </button>
+    <button role="menuitem" onclick="location.href='Lists/allLists.html?new=1'">New List</button>
+    <button role="menuitem" onclick="location.href='/dailyLog.html?new=1'">New Daily Log</button>
   </div>
 </nav>
 

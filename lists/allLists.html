@@ -22,7 +22,8 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <link href="/navigation/nav.css" rel="stylesheet">
 <script src="/navigation/nav.js" defer></script>
-<style>
+<link href="/lists/list.css" rel="stylesheet">
+<!-- <style>
 /* Layout: phone-first walkthrough. Sticky header with open count + filters, then one card per room that expands into big tap-target items. */
 
 /* ---------- Design tokens (colors and fonts) ----------
@@ -197,7 +198,7 @@ ul.jobs a { -webkit-touch-callout: none; -webkit-user-select: none; user-select:
 .drop-hover { outline: 3px solid var(--accent); outline-offset: -3px; } /* highlights the folder (or drop area) under your finger */
 .dropzone { border: 2px dashed var(--muted); border-radius: 8px; padding: 16px; text-align: center; color: var(--muted); font-size: 14px; list-style: none; } /* "drop here to take it out of its folder" area */
 .badge-done { font-family: var(--f-mono); font-size: 11px; letter-spacing: .05em; text-transform: uppercase; color: var(--sheet); background: var(--done); padding: 2px 7px; border-radius: 3px; } /* green "✓ Done Oct 12" badge */
-</style>
+</style> -->
 </head>
 <body>
 <!-- Navigation -->
@@ -221,7 +222,7 @@ ul.jobs a { -webkit-touch-callout: none; -webkit-user-select: none; user-select:
     <span class="fnav-pill" aria-hidden="true"></span>
     <a href="/home.html" aria-current="page">Home</a>
     <a href="/calendar.html">Calender</a>
-    <a href="/allLists.html">Lists</a>
+    <a href="Lists/allLists.html">Lists</a>
     <a href="/dailyLogs.html">Daily Logs</a>
   </nav>
   <div class="fnav-actions">
@@ -245,12 +246,12 @@ ul.jobs a { -webkit-touch-callout: none; -webkit-user-select: none; user-select:
       <span class="dock-tip">Calendar</span>
     </a>
     <!-- Lists -->
-    <a href="/allLists.html" aria-label="Lists">
+    <a href="Lists/allLists.html" aria-label="Lists">
       <svg class="fn-icon" viewBox="0 0 24 24"><circle cx="5" cy="6.5" r="1.1"/><circle cx="5" cy="12" r="1.1"/><circle cx="5" cy="17.5" r="1.1"/><path d="M9.5 6.5H20M9.5 12H20M9.5 17.5H20"/></svg>
       <span class="dock-tip">Lists</span>
     </a>
     <!-- Daily Logs -->
-    <a href="/dailyLogs.html" aria-label="Daily Logs">
+    <a href=/dailyLogs.html" aria-label="Daily Logs">
       <svg class="fn-icon" viewBox="0 0 24 24"><rect x="5" y="3.5" width="14" height="17" rx="2.5"/><path d="M9 3.5v17M12.5 8.5H16M12.5 12H16"/></svg>
       <span class="dock-tip">Daily Logs</span>
     </a>
@@ -265,8 +266,8 @@ ul.jobs a { -webkit-touch-callout: none; -webkit-user-select: none; user-select:
   </div>
   <div class="dock-menu" id="dockMenu" role="menu">
     <button role="menuitem">New Event</button>
-    <button role="menuitem">New List</button>
-    <button role="menuitem">New Daily Log</button>
+    <button role="menuitem" onclick="location.href='Lists/allLists.html?new=1'">New List</button>
+    <button role="menuitem" onclick="location.href='Lists/dailyLogs.html?new=1'">New Daily Log</button>
   </div>
 </nav>
 <div class="wrap">
@@ -1057,7 +1058,15 @@ document.addEventListener("submit", e => {
 // Hide the install tip if it was dismissed before, or if the app is already running from the home screen
 if (uiPrefs().tipHidden || navigator.standalone) document.getElementById("tip").hidden = true;
 ui.openFolders = uiPrefs().openFolders || {}; // ADDED: restore which folders were expanded last time
-route(); // show the right screen for the current URL
+// If we arrived from the dock's "New List" button, create a list right away and open it
+if (new URLSearchParams(location.search).get("new") === "1") {
+  history.replaceState(null, "", location.pathname); // clear ?new=1 so a refresh doesn't make another list
+  createJob("");                                     // makes the list, adds it to All Lists, and opens it
+} 
+else
+{
+  route();
+}
 </script>
 </body>
 </html>
