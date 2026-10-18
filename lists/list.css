@@ -35,58 +35,267 @@
 }
 
 /* ---------- Base / reset ---------- */
-* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; } /* padding counts inside widths; no gray flash on tap */
-body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 16px; line-height: 1.45; }
-.wrap { max-width: 720px; margin: 0 auto; padding-inline: 16px; padding-block: 0 56px; } /* centered column, phone-width on desktop too */
-button, select, input, textarea { font: inherit; color: inherit; } /* form controls inherit the page font instead of browser defaults */
-:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; } /* focus ring for keyboard users */
+* { 
+  box-sizing: border-box; 
+  -webkit-tap-highlight-color: transparent; 
+} /* padding counts inside widths; no gray flash on tap */
+body { 
+  background: var(--bg); 
+  color: var(--ink); 
+  font-family: var(--f-body); 
+  font-size: 16px; 
+  line-height: 1.45; 
+}
+.wrap { 
+  max-width: 720px; 
+  margin: 0 auto; 
+  padding-inline: 16px; 
+  padding-block: 0 56px; 
+} /* centered column, phone-width on desktop too */
+button, select, input, textarea { 
+  font: inherit; 
+  color: inherit; 
+} /* form controls inherit the page font instead of browser defaults */
+:focus-visible { 
+  outline: 2px solid var(--focus); 
+  outline-offset: 2px; 
+} /* focus ring for keyboard users */
 
 /* ---------- Title area and sticky header ---------- */
-.titlebar { padding-block: 16px 0; }
+.titlebar { 
+  padding-block: 16px 0; 
+}
 /* The header with the progress bar and filters sticks to the top while scrolling */
-header.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); padding-block: 4px 10px; border-bottom: 1px solid var(--rule); }
-.row1 { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; } /* title on the left, open count on the right */
-.eyebrow { font-family: var(--f-mono); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
-h1 { font-family: var(--f-display); font-weight: 700; font-size: 34px; line-height: 1; margin: 2px 0 0; text-transform: uppercase; letter-spacing: .01em; }
-.count { text-align: right; font-variant-numeric: tabular-nums; flex: none; } /* big "open items" number */
-.count .big { font-family: var(--f-display); font-weight: 700; font-size: 34px; line-height: 1; }
-.count .lbl { font-size: 12px; color: var(--muted); }
+header.top {
+  position: sticky; 
+  top: env(safe-area-inset-top, 0px); 
+  z-index: 5; 
+  background: var(--bg); 
+  padding-block: 4px 10px; 
+  border-bottom: 1px solid var(--rule); 
+}
+.row1 { 
+  display: flex; 
+  justify-content: space-between; 
+  align-items: flex-end; 
+  gap: 12px;
+ } /* title on the left, open count on the right */
+.eyebrow { 
+  font-family: var(--f-mono); 
+  font-size: 11px; 
+  letter-spacing: .12em; 
+  text-transform: uppercase; 
+  color: var(--muted); 
+}
+h1 { 
+  font-family: var(--f-display); 
+  font-weight: 700; 
+  font-size: 34px; 
+  line-height: 1; 
+  margin: 2px 0 0; 
+  text-transform: uppercase; 
+  letter-spacing: .01em; 
+}
+.count { 
+  text-align: right; 
+  font-variant-numeric: tabular-nums; 
+  flex: none; 
+} /* big "open items" number */
+.count .big { 
+  font-family: var(--f-display); 
+  font-weight: 700; 
+  font-size: 34px; 
+  line-height: 1; 
+}
+.count .lbl { 
+  font-size: 12px; 
+  color: var(--muted); 
+}
 
 /* ---------- Job info fields (date, community, address, lot) ---------- */
-.jobinfo { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px 12px; padding-block: 14px 4px; }
-.jobinfo .f { display: grid; gap: 3px; min-width: 0; }
-.jobinfo .w2 { grid-column: span 2; } /* "wide" fields take two of the three columns */
-.jobinfo label { font-family: var(--f-mono); font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
-.jobinfo input { width: 100%; min-width: 0; padding: 9px 10px; border: 1px solid var(--rule); border-radius: 6px; background: var(--sheet); font-size: 16px; } /* 16px stops iOS from zooming in on focus */
-.jobinfo input::placeholder { color: var(--muted); }
+.jobinfo { 
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr)); 
+  gap: 10px 12px; 
+  padding-block: 14px 4px; 
+}
+.jobinfo .f { 
+  display: grid; 
+  gap: 3px; 
+  min-width: 0; 
+}
+.jobinfo .w2 { 
+  grid-column: span 2; 
+} /* "wide" fields take two of the three columns */
+.jobinfo label { 
+  font-family: var(--f-mono); 
+  font-size: 10.5px; 
+  letter-spacing: .12em; 
+  text-transform: uppercase; 
+  color: var(--muted); 
+}
+.jobinfo input { 
+  width: 100%; 
+  min-width: 0; 
+  padding: 9px 10px; 
+  border: 1px solid var(--rule); 
+  border-radius: 6px; 
+  background: var(--sheet); 
+  font-size: 16px; 
+} /* 16px stops iOS from zooming in on focus */
+.jobinfo input::placeholder { 
+  color: var(--muted); 
+}
 
 /* ---------- Progress bar, filters, toolbar buttons ---------- */
-.gauge { height: 8px; background: var(--rule); border-radius: 2px; overflow: hidden; margin-top: 10px; } /* track */
-.gauge i { display: block; height: 100%; width: 0; background: var(--done); transition: width .3s; } /* green fill; JS sets its width to the % done */
-.filters { display: flex; gap: 8px; margin-top: 10px; }
-.filters select { flex: 1; min-width: 0; padding: 8px 10px; border: 1px solid var(--rule); border-radius: 6px; background: var(--sheet); font-size: 15px; }
-.tools { display: flex; gap: 8px; margin-top: 8px; align-items: center; flex-wrap: wrap; }
-.btn { border: 1px solid var(--rule); background: var(--sheet); border-radius: 6px; padding: 8px 12px; font-size: 14px; cursor: pointer; min-height: 40px; } /* 40px min height = comfortable tap target */
-.btn.primary { background: var(--ink); color: var(--bg); border-color: var(--ink); } /* dark filled button */
-.btn.danger { color: var(--danger); border-color: var(--danger); }
-.saved { margin-left: auto; font-size: 12px; color: var(--muted); font-family: var(--f-mono); } /* "Saved" / "Syncing…" status text */
+.gauge { 
+  height: 8px; 
+  background: var(--rule); 
+  border-radius: 2px; 
+  overflow: hidden; 
+  margin-top: 10px; 
+} /* track */
+.gauge i { 
+  display: block; 
+  height: 100%; 
+  width: 0; 
+  background: var(--done); 
+  transition: width .3s; 
+} /* green fill; JS sets its width to the % done */
+.filters { 
+  display: flex; 
+  gap: 8px; 
+  margin-top: 10px; 
+}
+.filters select { 
+  flex: 1; 
+  min-width: 0; 
+  padding: 8px 10px;
+  border: 1px solid var(--rule); 
+  border-radius: 6px; 
+  background: var(--sheet); 
+  font-size: 15px; 
+}
+.tools { 
+  display: flex; 
+  gap: 8px; 
+  margin-top: 8px; 
+  align-items: center; 
+  flex-wrap: wrap; 
+}
+.btn { 
+  border: 1px solid var(--rule); 
+  background: var(--sheet); 
+  border-radius: 6px; 
+  padding: 8px 12px;
+  font-size: 14px; 
+  cursor: pointer; 
+  min-height: 40px; 
+} /* 40px min height = comfortable tap target */
+.btn.primary { 
+  background: var(--ink); 
+  color: var(--bg); 
+  border-color: var(--ink); 
+} /* dark filled button */
+.btn.danger { 
+  color: var(--danger); border-color: var(--danger); 
+}
+.saved { 
+  margin-left: auto; 
+  font-size: 12px; 
+  color: var(--muted); 
+  font-family: var(--f-mono); 
+} /* "Saved" / "Syncing…" status text */
 
 /* ---------- "Add to Home Screen" tip box ---------- */
-.tip { margin-top: 14px; background: var(--sheet); border: 1px dashed var(--rule); border-radius: 6px; padding: 10px 12px; font-size: 14px; display: flex; gap: 10px; align-items: flex-start; }
-.tip p { margin: 0; flex: 1; min-width: 0; }
-.tip b { font-weight: 600; }
-.x { background: none; border: 0; color: var(--muted); font-size: 20px; line-height: 1; padding: 0 4px; cursor: pointer; } /* small "×" close buttons */
+.tip { 
+  margin-top: 14px; 
+  background: var(--sheet); 
+  border: 1px dashed var(--rule); 
+  border-radius: 6px; 
+  padding: 10px 12px; 
+  font-size: 14px; 
+  display: flex; 
+  gap: 10px; 
+  align-items: flex-start; 
+}
+.tip p { 
+  margin: 0; 
+  flex: 1; 
+  min-width: 0; 
+}
+.tip b { 
+  font-weight: 600; 
+}
+.x { 
+  background: none; 
+  border: 0; 
+  color: var(--muted); 
+  font-size: 20px; 
+  line-height: 1;
+  padding: 0 4px; 
+  cursor: pointer; 
+} /* small "×" close buttons */
 
 /* ---------- Rooms list ---------- */
-main { display: grid; gap: 10px; margin-top: 14px; }
+main { 
+  display: grid; 
+  gap: 10px; 
+  margin-top: 14px; 
+}
 /* Floor headings ("Second Floor", etc.) with an amber underline */
-h2.floor { font-family: var(--f-mono); font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); font-weight: 500; margin: 12px 0 0; padding-bottom: 6px; border-bottom: 2px solid var(--accent); }
-h2.floor:first-child { margin-top: 0; }
-.room { background: var(--sheet); border: 1px solid var(--rule); border-radius: 8px; overflow: hidden; } /* one card per room */
-.room-head { display: flex; align-items: center; gap: 12px; width: 100%; background: none; border: 0; padding: 14px; cursor: pointer; text-align: left; min-height: 56px; } /* the tappable row that expands/collapses the room */
-.room-name { font-family: var(--f-display); font-weight: 600; font-size: 22px; text-transform: uppercase; letter-spacing: .02em; flex: 1; min-width: 0; line-height: 1.1; }
+h2.floor { 
+  font-family: var(--f-mono); 
+  font-size: 12px; 
+  letter-spacing: .14em; 
+  text-transform: uppercase; 
+  color: var(--muted); 
+  font-weight: 500; 
+  margin: 12px 0 0; 
+  padding-bottom: 6px; 
+  border-bottom: 2px solid var(--accent); 
+}
+h2.floor:first-child {
+  margin-top: 0; 
+}
+.room { 
+  background: var(--sheet); 
+  border: 1px solid var(--rule); 
+  border-radius: 8px; 
+  overflow: hidden; 
+} /* one card per room */
+.room-head { 
+  display: flex; 
+  align-items: center; 
+  gap: 12px; 
+  width: 100%; 
+  background: none; 
+  border: 0; 
+  padding: 14px; 
+  cursor: pointer; 
+  text-align: left;
+  min-height: 56px; 
+} /* the tappable row that expands/collapses the room */
+.room-name { 
+  font-family: var(--f-display); 
+  font-weight: 600; 
+  font-size: 22px; 
+  text-transform: uppercase; 
+  letter-spacing: .02em; 
+  flex: 1; min-width: 0; 
+  line-height: 1.1; 
+}
 /* Status pill next to the room name: amber = has open items, green = all clear, outlined = no items */
-.pill { font-family: var(--f-mono); font-size: 12px; padding: 3px 8px; border-radius: 999px; background: var(--accent); color: var(--accent-ink); flex: none; font-variant-numeric: tabular-nums; }
+.pill { 
+  font-family: var(--f-mono); 
+  font-size: 12px; 
+  padding: 3px 8px; 
+  border-radius: 999px; 
+  background: var(--accent); 
+  color: var(--accent-ink);
+  flex: none; 
+  font-variant-numeric: tabular-nums; 
+}
 .pill.clear { background: var(--done); color: var(--sheet); }
 .pill.none { background: transparent; color: var(--muted); border: 1px solid var(--rule); }
 .chev { flex: none; color: var(--muted); transition: transform .2s; } /* the arrow icon */

@@ -1,12 +1,28 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>dProj</title>
-    <link href="/navigation/nav.css" rel="stylesheet">
-    <script src="/navigation/nav.js" defer></script>
-    <link href="/lists/list.css" rel="stylesheet">
+<meta charset="utf-8">
+<!-- viewport-fit=cover lets the page draw edge to edge on iPhones with a notch; safe-area padding is handled in CSS below -->
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Punch List</title>
+<!-- iOS "Add to Home Screen" settings: makes it open full screen like a native app -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Punch List">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<!-- Browser toolbar color, matched to light and dark mode backgrounds -->
+<meta name="theme-color" content="#eceeea" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#151a19" media="(prefers-color-scheme: dark)">
+<!-- PWA manifest and icons used when the app is installed to a home screen -->
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png">
+<!-- Google Fonts: Barlow Condensed (headings), IBM Plex Mono (labels), IBM Plex Sans (body) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<link href="/navigation/nav.css" rel="stylesheet">
+<script src="/navigation/nav.js" defer></script>
+<link href="/lists/list.css" rel="stylesheet">
 </head>
 <body>
 <!-- Navigation -->
@@ -21,17 +37,17 @@
 
 <!-- Top bar -->
 <header class="fnav" id="fnav">
-  <a class="fnav-brand" href="/">
+  <a class="fnav-brand" href="/home.html">
     <!-- <span class="fnav-mark"><svg class="fn-icon" viewBox="0 0 24 24" style="width:14px;height:14px;stroke:#fff;stroke-width:2.4"><path d="M9 6l6 6-6 6"/></svg></span> -->
-   <!-- LOGO/NAME -->
-    dProj
+    <!-- LOGO/NAME -->
+    Lupo Ipsum
   </a>
   <nav class="fnav-links" id="fnavLinks" aria-label="Primary">
     <span class="fnav-pill" aria-hidden="true"></span>
-    <a href="/home.html" aria-current="page">Home</a>
+    <!-- <a href="/home.html" aria-current="page">Home</a>
     <a href="/calendar.html">Calender</a>
-    <a href="/Lists/allLists.html">Lists</a>
-    <a href="/dailyLog.html">Daily Logs</a>
+    <a href="/ists/allLists.html">Lists</a>
+    <a href="/dailyLogs.html">Daily Logs</a> -->
   </nav>
   <div class="fnav-actions">
     <a class="fnav-btn fnav-btn--ghost" href="/login">Login</a>
@@ -44,40 +60,43 @@
   <div class="dock-shape" aria-hidden="true"><span class="dock-bar"></span><span class="dock-blob"></span></div>
   <div class="dock-items">
     <!-- Home -->
-    <a href="/" aria-current="page" aria-label="Home">
+    <a href="/home.html" aria-current="page" aria-label="Home">
       <svg class="fn-icon" viewBox="0 0 24 24"><path d="M4 11.2 12 4l8 7.2"/><path d="M6 9.8v9.7h12V9.8"/><path d="M10 19.5v-5h4v5"/></svg>
       <span class="dock-tip">Home</span>
     </a>
     <!-- Calendar -->
-    <a href="/" aria-label="Calendar">
+    <!-- <a href="/calendar.html" aria-label="Calendar">
       <svg class="fn-icon" viewBox="0 0 24 24"><rect x="4" y="5.5" width="16" height="14.5" rx="3"/><path d="M8 3.5v4M16 3.5v4M4 10.5h16"/></svg>
       <span class="dock-tip">Calendar</span>
-    </a>
+    </a> -->
+
     <!-- Lists -->
-    <a href="Lists/allLists.html" aria-label="Lists">
+    <a href="/lists/allLists.html" aria-label="Lists">
       <svg class="fn-icon" viewBox="0 0 24 24"><circle cx="5" cy="6.5" r="1.1"/><circle cx="5" cy="12" r="1.1"/><circle cx="5" cy="17.5" r="1.1"/><path d="M9.5 6.5H20M9.5 12H20M9.5 17.5H20"/></svg>
-      <span class="dock-tip">Lists</span>
+      <span class="dock-tip">My Lists</span>
     </a>
+
     <!-- Daily Logs -->
-    <a href="/dailyLog.html" aria-label="Daily Logs">
+    <!-- <a href=/dailyLogs.html" aria-label="Daily Logs">
       <svg class="fn-icon" viewBox="0 0 24 24"><rect x="5" y="3.5" width="14" height="17" rx="2.5"/><path d="M9 3.5v17M12.5 8.5H16M12.5 12H16"/></svg>
       <span class="dock-tip">Daily Logs</span>
-    </a>
+    </a> -->
+
     <!-- Messages -->
-    <a href="/" aria-label="Messages">
+    <!-- <a href="/messages.html" aria-label="Messages">
       <svg class="fn-icon" viewBox="0 0 24 24"><path d="M20 12a8 8 0 0 1-11.6 7.1L4 20l.9-4.4A8 8 0 1 1 20 12z"/><path d="M9 11h6M9 14h4"/></svg>
       <span class="dock-tip">Messages</span>
-    </a>
+    </a> -->
+
     <button class="dock-fab" id="dockFab" aria-label="Create" aria-expanded="false" aria-controls="dockMenu">
       <svg class="fn-icon" viewBox="0 0 24 24" style="stroke-width:2"><path d="M12 5v14M5 12h14"/></svg>
     </button>
   </div>
   <div class="dock-menu" id="dockMenu" role="menu">
-    <button role="menuitem">New Event</button>
-    <button role="menuitem" onclick="location.href='Lists/allLists.html?new=1'">New List</button>
-    <button role="menuitem" onclick="location.href='/dailyLog.html?new=1'">New Daily Log</button>
+    <!-- <button role="menuitem">New Event</button> -->
+    <button role="menuitem" onclick="location.href='/lists/allLists.html?new=1'">New List</button>
+    <!-- <button role="menuitem" onclick="location.href='/dailyLogs.html?new=1'">New Daily Log</button> -->
   </div>
 </nav>
-
 </body>
 </html>
