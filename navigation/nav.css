@@ -17,14 +17,34 @@
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #151a19; --sheet: #1d2422; --ink: #e6ebe7; --muted: #9aa49f; --rule: #333d3a;
-    --accent: #f0b232; --accent-ink: #231800; --done: #58b07c; --chip: #1f3245; --chip-ink: #8db8de; --danger: #e07a6c; --focus: #8db8de;
+    --bg: #151a19; 
+    --sheet: #1d2422; 
+    --ink: #e6ebe7; 
+    --muted: #9aa49f; 
+    --rule: #333d3a;
+    --accent: #f0b232; 
+    --accent-ink: #231800; 
+    --done: #58b07c; 
+    --chip: #1f3245; 
+    --chip-ink: #8db8de; 
+    --danger: #e07a6c; 
+    --focus: #8db8de;
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --bg: #151a19; --sheet: #1d2422; --ink: #e6ebe7; --muted: #9aa49f; --rule: #333d3a;
-  --accent: #f0b232; --accent-ink: #231800; --done: #58b07c; --chip: #1f3245; --chip-ink: #8db8de; --danger: #e07a6c; --focus: #8db8de;
+  --bg: #151a19; 
+  --sheet: #1d2422; 
+  --ink: #e6ebe7; 
+  --muted: #9aa49f; 
+  --rule: #333d3a;
+  --accent: #f0b232; 
+  --accent-ink: #231800; 
+  --done: #58b07c; 
+  --chip: #1f3245; 
+  --chip-ink: #8db8de; 
+  --danger: #e07a6c; 
+  --focus: #8db8de;
   color-scheme: dark;
 }
  
@@ -33,16 +53,26 @@
   font-family: var(--f-body);
   box-sizing: border-box;
 }
-.fnav *, .dock * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-.fnav :focus-visible, .dock :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.fnav *, .dock * { 
+  box-sizing: border-box; 
+  -webkit-tap-highlight-color: transparent; 
+}
+.fnav :focus-visible, .dock :focus-visible { 
+  outline: 2px solid var(--focus); 
+  outline-offset: 2px; 
+}
  
 /* ---------- Top bar ---------- */
 .fnav {
   position: fixed; z-index: 50;
   top: calc(14px + env(safe-area-inset-top, 0px));
-  left: 50%; transform: translateX(-50%);
+  left: 50%; 
+  transform: translateX(-50%);
   width: min(1120px, calc(100% - 32px));
-  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  display: flex; 
+  align-items: center; 
+  justify-content: space-between; 
+  gap: 16px;
   padding: 8px 8px 8px 16px;
   background: var(--sheet);
   border: 1px solid var(--rule);
@@ -56,47 +86,100 @@
   top: calc(10px + env(safe-area-inset-top, 0px));
 }
 .fnav-brand {
-  display: flex; align-items: center; gap: 8px;
-  font-family: var(--f-display); font-weight: 700; font-size: 24px; line-height: 1;
-  text-transform: uppercase; letter-spacing: .02em;
-  color: var(--ink); text-decoration: none; white-space: nowrap;
+  display: flex; 
+  align-items: center; 
+  gap: 8px;
+  font-family: var(--f-display); 
+  font-weight: 700; 
+  font-size: 24px; 
+  line-height: 1;
+  text-transform: uppercase; 
+  letter-spacing: .02em;
+  color: var(--ink); 
+  text-decoration: none; 
+  white-space: nowrap;
 }
 .fnav-mark {
-  width: 22px; height: 22px; display: grid; place-items: center;
-  border-radius: 4px; background: var(--accent); color: var(--accent-ink);
+  width: 22px; 
+  height: 22px; 
+  display: grid; 
+  place-items: center;
+  border-radius: 4px; 
+  background: var(--accent); 
+  color: var(--accent-ink);
 }
 .fnav-links {
-  position: relative; display: flex; gap: 2px; padding: 3px;
-  border: 1px solid var(--rule); border-radius: 6px; background: var(--bg);
+  position: relative; 
+  display: flex; 
+  gap: 2px; 
+  padding: 3px;
+  border: 1px solid var(--rule); 
+  border-radius: 6px; 
+  background: var(--bg);
 }
 .fnav-links a {
-  position: relative; z-index: 1; padding: 6px 14px; border-radius: 4px;
-  color: var(--muted); text-decoration: none;
-  font-family: var(--f-mono); font-size: 12px; font-weight: 500;
-  letter-spacing: .12em; text-transform: uppercase;
+  position: relative; 
+  z-index: 1; 
+  padding: 6px 14px; 
+  border-radius: 4px;
+  color: var(--muted); 
+  text-decoration: none;
+  font-family: var(--f-mono);
+  font-size: 12px; 
+  font-weight: 500;
+  letter-spacing: .12em; 
+  text-transform: uppercase;
   transition: color .25s;
 }
-.fnav-links a:hover, .fnav-links a[aria-current="page"] { color: var(--ink); }
+.fnav-links a:hover, .fnav-links a[aria-current="page"] { 
+  color: var(--ink); 
+}
 /* Sliding highlight behind the current link. Amber underline echoes the floor headings. */
 .fnav-pill {
-  position: absolute; z-index: 0; top: 3px; bottom: 3px; left: 0; width: 0;
-  border-radius: 4px; background: var(--sheet);
+  position: absolute; 
+  z-index: 0; 
+  top: 3px; 
+  bottom: 3px; 
+  left: 0; 
+  width: 0;
+  border-radius: 4px; 
+  background: var(--sheet);
   box-shadow: inset 0 0 0 1px var(--rule), inset 0 -2px 0 var(--accent);
   transition: transform .45s var(--fn-ease), width .45s var(--fn-ease);
 }
-.fnav-actions { display: flex; align-items: center; gap: 6px; }
+.fnav-actions { 
+  display: flex; 
+  align-items: center; 
+  gap: 6px; 
+}
 /* Buttons match .btn / .btn.primary from the punch list */
 .fnav-btn {
   font: 500 14px var(--f-body);
-  min-height: 40px; padding: 8px 14px;
-  border: 1px solid var(--rule); border-radius: 6px;
-  cursor: pointer; white-space: nowrap;
-  display: inline-flex; align-items: center; text-decoration: none;
+  min-height: 40px; 
+  padding: 8px 14px;
+  border: 1px solid var(--rule); 
+  border-radius: 6px;
+  cursor: pointer; 
+  white-space: nowrap;
+  display: inline-flex; 
+  align-items: center; 
+  text-decoration: none;
 }
-.fnav-btn--ghost { background: var(--sheet); color: var(--ink); }
-.fnav-btn--ghost:hover { border-color: var(--muted); }
-.fnav-btn--primary { background: var(--ink); color: var(--bg); border-color: var(--ink); }
-.fnav-btn--primary:hover { opacity: .88; }
+.fnav-btn--ghost { 
+  background: var(--sheet); 
+  color: var(--ink); 
+}
+.fnav-btn--ghost:hover { 
+  border-color: var(--muted); 
+}
+.fnav-btn--primary { 
+  background: var(--ink); 
+  color: var(--bg); 
+  border-color: var(--ink); 
+}
+.fnav-btn--primary:hover { 
+  opacity: .88; 
+}
  
 /* ---------- Bottom dock ---------- */
 /* The dock bar is the "ink" color and the + button is amber, the same two-tone as the primary button and the open-items pill.
@@ -107,77 +190,203 @@
   transform: translateX(-50%);
   transition: transform .5s var(--fn-ease), opacity .4s;
 }
-.dock.is-hidden { transform: translate(-50%, 140%); opacity: 0; }
-.dock-shape { position: absolute; inset: -10px; filter: url(#fn-goo) drop-shadow(0 8px 14px rgba(0,0,0,.25)); pointer-events: none; }
-.dock-shape span { position: absolute; }
-.dock-bar { left: 10px; top: 10px; bottom: 10px; right: 76px; border-radius: 999px; background: var(--ink); }
+.dock.is-hidden { 
+  transform: translate(-50%, 140%); 
+  opacity: 0; 
+}
+.dock-shape { 
+  position: absolute; 
+  inset: -10px; 
+  filter: url(#fn-goo) drop-shadow(0 8px 14px rgba(0,0,0,.25)); 
+  pointer-events: none; 
+}
+.dock-shape span { 
+  position: absolute; 
+}
+.dock-bar { 
+  left: 10px; 
+  top: 10px; 
+  bottom: 10px; 
+  right: 76px; 
+  border-radius: 999px; 
+  background: var(--ink); 
+}
 .dock-blob {
-  right: 10px; top: 50%; width: 64px; height: 64px; margin-top: -32px;
-  border-radius: 50%; background: var(--accent);
+  right: 10px; 
+  top: 50%; 
+  width: 64px; 
+  height: 64px; 
+  margin-top: -32px;
+  border-radius: 50%; 
+  background: var(--accent);
   transition: transform .5s var(--fn-ease);
 }
-.dock:hover .dock-blob { transform: translateX(4px); }
-.dock-items { position: relative; display: flex; align-items: center; gap: 4px; padding: 8px 10px; }
+.dock:hover .dock-blob { 
+  transform: translateX(4px);
+}
+.dock-items { 
+  position: relative; 
+  display: flex; 
+  align-items: center; 
+  gap: 4px; 
+  padding: 8px 10px; 
+}
 .dock-items a {
-  position: relative; width: 52px; height: 48px; display: grid; place-items: center;
-  color: var(--bg); opacity: .6; border-radius: 10px; text-decoration: none;
+  position: relative; 
+  width: 52px; 
+  height: 48px; 
+  display: grid; 
+  place-items: center;
+  color: var(--bg); 
+  opacity: .6; 
+  border-radius: 10px; 
+  text-decoration: none;
   transition: opacity .25s, background .25s;
 }
-.dock-items a:hover { opacity: 1; background: color-mix(in srgb, var(--bg) 14%, transparent); }
-.dock-items a[aria-current="page"] { opacity: 1; background: color-mix(in srgb, var(--bg) 14%, transparent); }
-.dock-items a::after {
-  content: ""; position: absolute; bottom: 4px; left: 50%; width: 5px; height: 5px; margin-left: -2.5px;
-  border-radius: 50%; background: var(--accent);
-  transform: scale(0); transition: transform .35s var(--fn-ease);
+.dock-items a:hover { 
+  opacity: 1; 
+  background: color-mix(in srgb, var(--bg) 14%, transparent); 
 }
-.dock-items a[aria-current="page"]::after { transform: scale(1); }
+.dock-items a[aria-current="page"] { 
+  opacity: 1; 
+  background: color-mix(in srgb, var(--bg) 14%, transparent); 
+}
+.dock-items a::after {
+  content: ""; 
+  position: absolute; 
+  bottom: 4px; 
+  left: 50%; 
+  width: 5px; 
+  height: 5px; 
+  margin-left: -2.5px;
+  border-radius: 50%; 
+  background: var(--accent);
+  transform: scale(0); 
+  transition: transform .35s var(--fn-ease);
+}
+.dock-items a[aria-current="page"]::after { 
+  transform: scale(1); 
+}
 .dock-tip {
-  position: absolute; bottom: calc(100% + 10px); left: 50%; transform: translate(-50%, 4px);
-  padding: 4px 9px; border-radius: 4px;
-  background: var(--ink); color: var(--bg);
-  font-family: var(--f-mono); font-size: 11px; letter-spacing: .05em; text-transform: uppercase;
-  white-space: nowrap; opacity: 0; pointer-events: none;
+  position: absolute; 
+  bottom: calc(100% + 10px); 
+  left: 50%; 
+  transform: translate(-50%, 4px);
+  padding: 4px 9px; 
+  border-radius: 4px;
+  background: var(--ink); 
+  color: var(--bg);
+  font-family: var(--f-mono); 
+  font-size: 11px; 
+  letter-spacing: .05em; 
+  text-transform: uppercase;
+  white-space: nowrap; 
+  opacity: 0; 
+  pointer-events: none;
   transition: opacity .2s, transform .2s;
 }
-.dock-items a:hover .dock-tip, .dock-items a:focus-visible .dock-tip { opacity: 1; transform: translate(-50%, 0); }
-.dock-fab {
-  width: 64px; height: 64px; margin-left: 14px; margin-right: -8px;
-  border: 0; border-radius: 50%; background: transparent;
-  color: var(--accent-ink); cursor: pointer; display: grid; place-items: center;
+.dock-items a:hover .dock-tip, .dock-items a:focus-visible .dock-tip { 
+  opacity: 1; 
+  transform: translate(-50%, 0); 
 }
-.dock-fab svg { transition: transform .45s var(--fn-ease); }
-.dock-fab[aria-expanded="true"] svg { transform: rotate(135deg); }
+.dock-fab {
+  width: 64px; 
+  height: 64px; 
+  margin-left: 14px; 
+  margin-right: -8px;
+  border: 0; 
+  border-radius: 50%; 
+  background: transparent;
+  color: var(--accent-ink); 
+  cursor: pointer; 
+  display: grid; 
+  place-items: center;
+}
+.dock-fab svg { 
+  transition: transform .45s var(--fn-ease); 
+}
+.dock-fab[aria-expanded="true"] svg { 
+  transform: rotate(135deg); 
+}
 /* The create menu looks like a punch list room card */
 .dock-menu {
-  position: absolute; right: 0; bottom: calc(100% + 14px); min-width: 200px;
-  display: grid; gap: 2px; padding: 6px; border-radius: 8px;
-  background: var(--sheet); border: 1px solid var(--rule);
+  position: absolute; 
+  right: 0;
+  bottom: calc(100% + 14px); 
+  min-width: 200px;
+  display: grid; 
+  gap: 2px; 
+  padding: 6px; 
+  border-radius: 8px;
+  background: var(--sheet); 
+  border: 1px solid var(--rule);
   box-shadow: 0 16px 40px -12px rgba(0,0,0,.45);
-  transform-origin: bottom right; transform: scale(.9) translateY(8px);
-  opacity: 0; pointer-events: none;
+  transform-origin: bottom right; 
+  transform: scale(.9) translateY(8px);
+  opacity: 0; 
+  pointer-events: none;
   transition: transform .35s var(--fn-ease), opacity .2s;
 }
-.dock-menu.is-open { transform: none; opacity: 1; pointer-events: auto; }
-.dock-menu button {
-  display: flex; align-items: center; gap: 10px; min-height: 40px; padding: 9px 12px;
-  border: 0; border-radius: 6px; background: transparent; color: var(--ink);
-  font: 500 14px var(--f-body); text-align: left; cursor: pointer;
+.dock-menu.is-open { 
+  transform: none; 
+  opacity: 1; 
+  pointer-events: auto; 
 }
-.dock-menu button:hover { background: var(--chip); color: var(--chip-ink); }
+.dock-menu button {
+  display: flex; 
+  align-items: center; 
+  gap: 10px; 
+  min-height: 40px; 
+  padding: 9px 12px;
+  border: 0; 
+  border-radius: 6px; 
+  background: transparent; 
+  color: var(--ink);
+  font: 500 14px var(--f-body); 
+  text-align: left; 
+  cursor: pointer;
+}
+.dock-menu button:hover { 
+  background: var(--chip); 
+  color: var(--chip-ink); 
+}
 /* Was nested inside .dock-menu before; flattened so it works in every browser */
-.dock-menu a { text-decoration: none; color: inherit; }
-.fn-icon { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.dock-menu a { 
+  text-decoration: none; 
+  color: inherit; 
+}
+.fn-icon { 
+  width: 22px; 
+  height: 22px; 
+  fill: none; 
+  stroke: currentColor; 
+  stroke-width: 1.6; 
+  stroke-linecap: round; 
+  stroke-linejoin: round; 
+}
  
 /* ---------- Responsiveness ---------- */
 @media (max-width: 760px) {
-  .fnav-links { display: none; }
-  .fnav, .fnav.is-compact { padding: 6px 6px 6px 16px; }
-  .fnav-btn--ghost { display: none; }
+  .fnav-links { 
+    display: none; 
+  }
+  .fnav, .fnav.is-compact { 
+    padding: 6px 6px 6px 16px; 
+  }
+  .fnav-btn--ghost { 
+    display: none; 
+  }
 }
 @media (max-width: 420px) {
-  .dock-items a { width: 44px; }
-  .dock-bar { right: 70px; }
+  .dock-items a { 
+    width: 44px; 
+  }
+  .dock-bar { 
+    right: 70px; 
+  }
 }
 @media (prefers-reduced-motion: reduce) {
-  .fnav, .fnav *, .dock, .dock * { transition-duration: .01ms !important; }
+  .fnav, .fnav *, .dock, .dock * { 
+    transition-duration: .01ms !important; 
+  }
 }
