@@ -21,14 +21,14 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 
-<link href="nav.css" rel="stylesheet">
-<script src="nav.js" defer></script>
-<link href="list.css" rel="stylesheet"> 
+<link href="nav-bar/nav.css" rel="stylesheet">
+<script src="nav-bar/nav.js" defer></script>
+<link href="all-lists/list.css" rel="stylesheet"> 
 <!-- Firebase libraries (compat build) and your project settings. These must load BEFORE allLists.js -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-<script src="firebase-config.js"></script>
-<script src="allLists.js" defer></script>
+<script src="firebase-starter/firebase-config.js"></script>
+<script src="all-lists/allLists.js" defer></script>
 
 </head>
 <body>
@@ -115,7 +115,7 @@
       <h1>My Lists</h1>
     </div>
     <!-- Only shown when Firebase isn't configured (data is stored on this phone only) -->
-    <div class="banner" id="offlineBanner" hidden>Shared saving isn't set up yet, so lists are saved on this phone only. Add your Firebase settings to <b>firebase-config.js</b> to share them.</div>
+    <div class="banner" id="offlineBanner" hidden>Shared saving isn't set up yet, so lists are saved on this phone only. Add your Firebase settings to <b>firebase-starter/firebase-config.js</b> to share them.</div>
     <div class="tools" style="margin-top:16px">
       <button type="button" class="btn primary" id="newJob">New list</button>
       <!-- ADDED: button that shows/hides the "create a folder" form below -->

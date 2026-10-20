@@ -8,9 +8,12 @@
   const current = () => links.querySelector('[aria-current="page"]');
 
   // Mark the link matching the current URL as active
-  const path = location.pathname;
+  // a.pathname is the link's full resolved path, so this works from any folder and on GitHub Pages (/repo-name/...).
+  // "/index.html" and "/" are treated as the same page.
+  const norm = p => p.replace(/index\.html$/, '');
+  const path = norm(location.pathname);
   document.querySelectorAll('.fnav-links a, .dock-items a').forEach(a => {
-    a.getAttribute('href') === path ? a.setAttribute('aria-current', 'page') : a.removeAttribute('aria-current');
+    norm(a.pathname) === path ? a.setAttribute('aria-current', 'page') : a.removeAttribute('aria-current');
   });
 
   // Sliding pill under the active / hovered top link
