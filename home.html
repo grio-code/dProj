@@ -24,9 +24,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 
-<link href="navigation/nav.css" rel="stylesheet">
-<script src="navigation/nav.js" defer></script>
-<link href="lists/list.css" rel="stylesheet">
+<link href="nav.css" rel="stylesheet">
+<script src="nav.js" defer></script>
+<link href="list.css" rel="stylesheet">
 </head>
 <body>
 <!-- Navigation -->
@@ -77,7 +77,7 @@
     </a> -->
 
     <!-- Lists -->
-    <a href="lists/allLists.html" aria-label="Lists">
+    <a href="allLists.html" aria-label="Lists">
       <svg class="fn-icon" viewBox="0 0 24 24"><circle cx="5" cy="6.5" r="1.1"/><circle cx="5" cy="12" r="1.1"/><circle cx="5" cy="17.5" r="1.1"/><path d="M9.5 6.5H20M9.5 12H20M9.5 17.5H20"/></svg>
       <span class="dock-tip">My Lists</span>
     </a>
@@ -100,8 +100,8 @@
   </div>
   <div class="dock-menu" id="dockMenu" role="menu">
     <!-- <button role="menuitem">New Event</button> -->
-    <button role="menuitem" onclick="location.href='/lists/allLists.html?new=1'">New List</button>
-    <!-- <button role="menuitem" onclick="location.href='/dailyLogs.html?new=1'">New Daily Log</button> -->
+    <button role="menuitem" onclick="location.href='allLists.html?new=1'">New List</button>
+    <!-- <button role="menuitem" onclick="location.href='dailyLogs.html?new=1'">New Daily Log</button> -->
   </div>
 </nav>
 </body>

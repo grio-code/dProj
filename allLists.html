@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<!-- viewport-fit=cover lets the page draw edge to edge on iPhones with a notch; safe-area padding is handled in CSS below -->
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Punch List</title>
+<!-- iOS "Add to Home Screen" settings: makes it open full screen like a native app -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Punch List">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<!-- Browser toolbar color, matched to light and dark mode backgrounds -->
+<meta name="theme-color" content="#eceeea" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#151a19" media="(prefers-color-scheme: dark)">
+<!-- PWA manifest and icons used when the app is installed to a home screen -->
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png">
+<!-- Google Fonts: Barlow Condensed (headings), IBM Plex Mono (labels), IBM Plex Sans (body) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+
+<link href="nav.css" rel="stylesheet">
+<script src="nav.js" defer></script>
+<link href="list.css" rel="stylesheet"> 
+<script src="allLists.js" defer></script>
+
+</head>
+<body>
+<!-- Navigation -->
+<!-- Goo filter for the dock (include once) -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <filter id="fn-goo">
+    <feGaussianBlur in="SourceGraphic" stdDeviation="8" result="b"/>
+    <feColorMatrix in="b" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 22 -10" result="g"/>
+    <feComposite in="SourceGraphic" in2="g" operator="atop"/>
+  </filter>
+</svg>
+
+<!-- Top bar -->
+<header class="fnav" id="fnav">
+  <a class="fnav-brand" href="home.html">
+    <!-- <span class="fnav-mark"><svg class="fn-icon" viewBox="0 0 24 24" style="width:14px;height:14px;stroke:#fff;stroke-width:2.4"><path d="M9 6l6 6-6 6"/></svg></span> -->
+    <!-- LOGO/NAME -->
+    Integrate
+  </a>
+  <nav class="fnav-links" id="fnavLinks" aria-label="Primary">
+    <span class="fnav-pill" aria-hidden="true"></span>
+    <!-- <a href="home.html" aria-current="page">Home</a>
+    <a href="calendar.html">Calender</a>
+    <a href="allLists.html">Lists</a>
+    <a href="dailyLogs.html">Daily Logs</a> -->
+  </nav>
+  <div class="fnav-actions">
+    <!-- <a class="fnav-btn fnav-btn--ghost" href="login">Login</a>
+    <a class="fnav-btn fnav-btn--primary" href="signup">Sign up</a> -->
+    <!-- <a class="fnav-btn" href="login">Login</a>
+    <a class="fnav-btn" href="signup">Sign up</a> -->
+  </div>
+</header>
+
+<!-- Bottom dock -->
+<nav class="dock" id="dock" aria-label="Quick navigation">
+  <div class="dock-shape" aria-hidden="true"><span class="dock-bar"></span><span class="dock-blob"></span></div>
+  <div class="dock-items">
+    <!-- Home -->
+    <a href="home.html" aria-current="page" aria-label="Home">
+      <svg class="fn-icon" viewBox="0 0 24 24"><path d="M4 11.2 12 4l8 7.2"/><path d="M6 9.8v9.7h12V9.8"/><path d="M10 19.5v-5h4v5"/></svg>
+      <span class="dock-tip">Home</span>
+    </a>
+    <!-- Calendar -->
+    <!-- <a href="calendar.html" aria-label="Calendar">
+      <svg class="fn-icon" viewBox="0 0 24 24"><rect x="4" y="5.5" width="16" height="14.5" rx="3"/><path d="M8 3.5v4M16 3.5v4M4 10.5h16"/></svg>
+      <span class="dock-tip">Calendar</span>
+    </a> -->
+
+    <!-- Lists -->
+    <a href="allLists.html" aria-label="Lists">
+      <svg class="fn-icon" viewBox="0 0 24 24"><circle cx="5" cy="6.5" r="1.1"/><circle cx="5" cy="12" r="1.1"/><circle cx="5" cy="17.5" r="1.1"/><path d="M9.5 6.5H20M9.5 12H20M9.5 17.5H20"/></svg>
+      <span class="dock-tip">My Lists</span>
+    </a>
+
+    <!-- Daily Logs -->
+    <!-- <a href="dailyLogs.html" aria-label="Daily Logs">
+      <svg class="fn-icon" viewBox="0 0 24 24"><rect x="5" y="3.5" width="14" height="17" rx="2.5"/><path d="M9 3.5v17M12.5 8.5H16M12.5 12H16"/></svg>
+      <span class="dock-tip">Daily Logs</span>
+    </a> -->
+
+    <!-- Messages -->
+    <!-- <a href="messages.html" aria-label="Messages">
+      <svg class="fn-icon" viewBox="0 0 24 24"><path d="M20 12a8 8 0 0 1-11.6 7.1L4 20l.9-4.4A8 8 0 1 1 20 12z"/><path d="M9 11h6M9 14h4"/></svg>
+      <span class="dock-tip">Messages</span>
+    </a> -->
+
+    <button class="dock-fab" id="dockFab" aria-label="Create" aria-expanded="false" aria-controls="dockMenu">
+      <svg class="fn-icon" viewBox="0 0 24 24" style="stroke-width:2"><path d="M12 5v14M5 12h14"/></svg>
+    </button>
+  </div>
+  <div class="dock-menu" id="dockMenu" role="menu">
+    <!-- <button role="menuitem">New Event</button> -->
+    <button role="menuitem" onclick="location.href='allLists.html?new=1'">New List</button>
+    <!-- <button role="menuitem" onclick="location.href='dailyLogs.html?new=1'">New Daily Log</button> -->
+  </div>
+</nav>
+<div class="wrap">
+  <!-- ===== SCREEN 1: Jobs list (home). Hidden/shown by JS. ===== -->
+  <div id="jobsView" hidden>
+    <div class="titlebar">
+      <!-- <div class="eyebrow">Modern Haven Homes</div> -->
+      <h1>My Lists</h1>
+    </div>
+    <!-- Only shown when Firebase isn't configured (data is stored on this phone only) -->
+    <div class="banner" id="offlineBanner" hidden>Shared saving isn't set up yet, so lists are saved on this phone only. Add your Firebase settings to <b>firebase-config.js</b> to share them.</div>
+    <div class="tools" style="margin-top:16px">
+      <button type="button" class="btn primary" id="newJob">New list</button>
+      <!-- ADDED: button that shows/hides the "create a folder" form below -->
+      <button type="button" class="btn" id="newFolder">New folder</button>
+      <span class="saved" id="jobsSaved"></span>
+    </div>
+    <!-- ADDED: form for naming a new folder. Hidden until "New folder" is tapped. -->
+    <form id="addFolderForm" hidden>
+      <input id="newFolderName" type="text" maxlength="40" placeholder="Folder name" aria-label="New folder name">
+      <button class="btn primary" type="submit">Create</button>
+    </form>
+    <!-- ADDED: small tip about dragging. Shown by renderJobs() only when there is at least one folder and one list. -->
+    <p class="when" id="dragHint" style="margin:12px 0 0" hidden>Tip: press and hold a list, then drag it onto a folder.</p>
+    <!-- Filled in by renderJobs() -->
+    <ul class="jobs" id="jobs"></ul>
+    <!-- Dismissible tip for installing the app on an iPhone home screen -->
+    <div class="tip" id="tip">
+      <p><b>Put it on your iPhone:</b> in Safari, tap the Share button, then <b>Add to Home Screen</b>. It opens like an app from then on.</p>
+      <button type="button" class="x" id="tipX" aria-label="Hide tip">×</button>
+    </div>
+  </div>
+
+  <!-- ===== SCREEN 2: One job (a single punch list). Hidden/shown by JS. ===== -->
+  <div id="jobView" hidden>
+    <div class="titlebar">
+      <button type="button" class="back" id="backBtn">‹ All Lists </button>
+      <div class="row1">
+        <div>
+          <!-- <div class="eyebrow">Modern Haven Homes</div> -->
+          <!-- CHANGED: this heading used to just say "Punch List". It now has an id so the script can fill it with "Community - Lot" from the job info fields below. -->
+          <h1 id="jobTitle"> New List</h1>
+        </div>
+        <!-- Live count of open items; updated by render() -->
+        <div class="count"><div class="big" id="openN">0</div><div class="lbl" id="openL">open items</div></div>
+      </div>
+    </div>
+    <!-- Job details. data-meta tells the JS which field of state.meta each input edits. -->
+    <div class="jobinfo" id="jobinfo">
+      <div class="f"><label for="jDate">Date</label><input id="jDate" type="date" data-meta="date"></div>
+      <div class="f w2"><label for="jCommunity">Community</label><input id="jCommunity" type="text" maxlength="60" data-meta="community" placeholder="Community name"></div>
+      <div class="f w2"><label for="jAddress">Address</label><input id="jAddress" type="text" maxlength="100" data-meta="address" placeholder="Street address"></div>
+      <div class="f"><label for="jLot">Lot #</label><input id="jLot" type="text" maxlength="20" data-meta="lot" placeholder="Lot"></div>
+      <!-- ADDED: choose which folder this list lives in. Options are filled in by applyFolders(). It has no data-meta attribute because it saves through its own change listener. -->
+      <div class="f full"><label for="jFolder">Folder</label><select id="jFolder" aria-label="Folder"></select></div>
+    </div>
+    <!-- Sticky header: progress bar, filters, and toolbar -->
+    <header class="top">
+      <div class="gauge" role="progressbar" aria-label="Punch list completion" aria-valuemin="0" aria-valuemax="100" id="gauge"><i id="gaugeFill"></i></div>
+      <div class="filters">
+        <!-- Filter by status -->
+        <select id="showF" aria-label="Show"><option value="all">All items</option><option value="open">Open items</option><option value="done">Completed</option></select>
+        <!-- Filter by trade; options are filled in by applyTrades() -->
+        <select id="tradeF" aria-label="Trade"></select>
+      </div>
+      <div class="tools">
+        <button type="button" class="btn" id="linkBtn">Send link</button>
+        <!-- REMOVED: the "Copy list for subs" button (id="copyBtn") was here -->
+        <button type="button" class="btn" id="tradesBtn">Edit levels &amp; trades</button>
+        <span class="saved" id="saved">Loading…</span>
+      </div>
+      <!-- Fallback textarea shown when the clipboard can't be used automatically -->
+      <div class="copybox" id="copyBox" hidden><textarea id="copyText" readonly aria-label="Text to copy"></textarea></div>
+      <!-- Panel for adding/removing levels (floors) and trades -->
+      <div class="copybox" id="tradesBox" hidden><div class="eyebrow">Levels</div><div class="when" style="margin-top:4px">Removing a level moves its rooms to the first level.</div><div class="meta" id="floorList"></div><form id="addFloor" style="display:grid;grid-template-columns:1fr auto;gap:8px;padding:10px 0 14px"><input id="newFloor" type="text" maxlength="30" placeholder="Add a level (e.g. Basement)" aria-label="New level"><button class="btn primary" type="submit">Add</button></form><div class="eyebrow">Trades</div><div class="meta" id="tradeList"></div><form id="addTrade" style="display:grid;grid-template-columns:1fr auto;gap:8px;padding-top:10px"><input id="newTrade" type="text" maxlength="30" placeholder="Add a trade (e.g. Insulation)" aria-label="New trade"><button class="btn primary" type="submit">Add</button></form></div>
+    </header>
+
+    <!-- Form to add a new room to this list and choose which level it belongs to -->
+    <form class="addroom" id="addRoom">
+      <input id="newRoom" type="text" maxlength="40" placeholder="Add New Room" aria-label="New room name">
+      <select id="newRoomFloor" aria-label="List"></select>
+      <button class="btn primary" type="submit">Add</button>
+    </form>
+
+    <!-- All the room cards get rendered into this element by render() -->
+    <main id="rooms"></main>
+
+    <!-- Delete-the-whole-list link and its confirmation box -->
+    <div class="danger-zone" id="dangerZone">
+      <button type="button" class="link muted" id="askDelJob">Delete this list</button>
+    </div>
+    <div class="confirm boxed" id="confirmDelJob" hidden>
+      Delete this whole list for everyone? This can't be undone.
+      <div class="acts"><button type="button" class="btn" id="keepJob">Keep it</button><button type="button" class="btn danger" id="delJob">Delete</button></div>
+    </div>
+  </div>
+</div>
+<!-- Small popup message, shown briefly by toast() -->
+<div class="toast" id="toast" hidden></div>
+</body>
+</html>
