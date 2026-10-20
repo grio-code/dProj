@@ -601,9 +601,7 @@ function applyFolders() {
   const sel = document.getElementById("jFolder");
   sel.innerHTML = `<option value="">No folder</option>` + sortedFolders().map(([id, f]) => `<option value="${
   esc(id)
-  }">$
-  {esc(f.name)
-  }</option>`).join("");
+  }">${esc(f.name)}</option>`).join("");
   sel.value = foldersList[state.meta.folderId] ? state.meta.folderId : "";
   renderJobs();
 }
