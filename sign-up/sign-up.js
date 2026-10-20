@@ -1,9 +1,15 @@
+import { auth, db } from "./firebase.js";
+import { createUserWithEmailAndPassword, updateProfile, deleteUser }
+  from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+import { doc, setDoc, serverTimestamp }
+  from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js"; 
+
 (() => {
   // ---------- Settings you may want to change ----------
   const MAX_LOGO_BYTES = 2 * 1024 * 1024;                       // 2 MB
   const LOGO_TYPES = ['image/png', 'image/jpeg', 'image/webp']; // SVG is left out on purpose: it can carry scripts
   const MIN_PASSWORD = 8;
-  const AFTER_SIGNUP_URL = 'login/login.html';                  // where to go once the account is created
+  const AFTER_SIGNUP_URL = 'index.html';                  // where to go once the account is created
 
   // ---------- Grab the page elements ----------
   const $ = id => document.getElementById(id);
@@ -172,11 +178,51 @@
   //   const res = await fetch('/api/signup', { method: 'POST', body: data });
   //   if (!res.ok) throw new Error((await res.json()).message || 'Could not create your account.');
   // Never log or store the password in the browser.
+   // Shrinks the logo to 256px so it fits comfortably in a Firestore document (1 MB limit)
+  async function shrinkLogo(file, max = 256) {
+    const bmp = await createImageBitmap(file);
+    const scale = Math.min(1, max / Math.max(bmp.width, bmp.height));
+    const c = document.createElement('canvas');
+    c.width = Math.round(bmp.width * scale);
+    c.height = Math.round(bmp.height * scale);
+    c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
+    return c.toDataURL('image/webp', 0.85);
+  }
+
+  function authMessage(code) {
+    return ({
+      'auth/email-already-in-use': 'An account with that email already exists. Try logging in.',
+      'auth/invalid-email': 'That email address doesn\u2019t look right.',
+      'auth/weak-password': 'Choose a stronger password.',
+      'auth/network-request-failed': 'Network problem. Check your connection and try again.',
+      'auth/too-many-requests': 'Too many attempts. Try again in a bit.'
+    })[code] || 'Could not create your account. Try again.';
+  }
+
   async function createAccount(data) {
-    const preview = {};
-    data.forEach((v, k) => { if (k !== 'password') preview[k] = v instanceof File ? `[file: ${v.name}]` : v; });
-    console.log('Sign-up data (password hidden):', preview);
-    throw new Error('Sign-up isn\u2019t connected to a backend yet. The form is ready; see createAccount() in signup.js.');
+    const email = data.get('email'), password = data.get('password');
+    let cred;
+    try {
+      cred = await createUserWithEmailAndPassword(auth, email, password);
+    } catch (e) {
+      throw new Error(authMessage(e.code));
+    }
+    try {
+      await updateProfile(cred.user, { displayName: data.get('name') });
+      const logoFile = data.get('logo');
+      const logo = logoFile instanceof File ? await shrinkLogo(logoFile) : null;
+      await setDoc(doc(db, 'users', cred.user.uid, 'profile', 'info'), {
+        name: data.get('name'),
+        phone: data.get('phone'),
+        company: data.get('company'),
+        logo,
+        createdAt: serverTimestamp()
+      });
+    } catch (e) {
+      console.error(e);
+      await deleteUser(cred.user).catch(() => {});   // roll back so they can retry with the same email
+      throw new Error('We couldn\u2019t save your profile. Please try again.');
+    }
   }
 
   // ---------- Submit ----------
@@ -196,7 +242,7 @@
     btn.textContent = 'Creating account\u2026';
     try {
       await createAccount(buildPayload());
-      showMsg('Account created. Taking you to log in\u2026', false);
+      showMsg('Account created. Taking you in\u2026', false);      
       setTimeout(() => { location.href = AFTER_SIGNUP_URL; }, 900);
     } catch (ex) {
       showMsg(ex.message || 'Could not create your account. Try again.');
