@@ -20,11 +20,9 @@
 <!-- Google Fonts: Barlow Condensed (headings), IBM Plex Mono (labels), IBM Plex Sans (body) -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
-<link href="/navigation/nav.css" rel="stylesheet">
-<script src="/navigation/nav.js" defer></script>
-<link href="/lists/list.css" rel="stylesheet">
-<script src="/navigation/auth-nav.js"></script>
- 
+<link href="navigation/nav.css" rel="stylesheet">
+<script src="navigation/nav.js" defer></script>
+<link href="lists/list.css" rel="stylesheet"> 
 </head>
 <body>
 <!-- Navigation -->
@@ -39,23 +37,23 @@
 
 <!-- Top bar -->
 <header class="fnav" id="fnav">
-  <a class="fnav-brand" href="/home.html">
+  <a class="fnav-brand" href="home.html">
     <!-- <span class="fnav-mark"><svg class="fn-icon" viewBox="0 0 24 24" style="width:14px;height:14px;stroke:#fff;stroke-width:2.4"><path d="M9 6l6 6-6 6"/></svg></span> -->
     <!-- LOGO/NAME -->
     Integrate
   </a>
   <nav class="fnav-links" id="fnavLinks" aria-label="Primary">
     <span class="fnav-pill" aria-hidden="true"></span>
-    <!-- <a href="/home.html" aria-current="page">Home</a>
-    <a href="/calendar.html">Calender</a>
-    <a href="/ists/allLists.html">Lists</a>
-    <a href="/dailyLogs.html">Daily Logs</a> -->
+    <!-- <a href="home.html" aria-current="page">Home</a>
+    <a href="calendar.html">Calender</a>
+    <a href="lists/allLists.html">Lists</a>
+    <a href="dailyLogs.html">Daily Logs</a> -->
   </nav>
   <div class="fnav-actions">
-    <!-- <a class="fnav-btn fnav-btn--ghost" href="/login">Login</a>
-    <a class="fnav-btn fnav-btn--primary" href="/signup">Sign up</a> -->
-    <a class="fnav-btn" href="/login">Login</a>
-    <a class="fnav-btn" href="/signup">Sign up</a>
+    <!-- <a class="fnav-btn fnav-btn--ghost" href="login">Login</a>
+    <a class="fnav-btn fnav-btn--primary" href="signup">Sign up</a> -->
+    <!-- <a class="fnav-btn" href="login">Login</a>
+    <a class="fnav-btn" href="signup">Sign up</a> -->
   </div>
 </header>
 
@@ -64,7 +62,7 @@
   <div class="dock-shape" aria-hidden="true"><span class="dock-bar"></span><span class="dock-blob"></span></div>
   <div class="dock-items">
     <!-- Home -->
-    <a href="/home.html" aria-current="page" aria-label="Home">
+    <a href="home.html" aria-current="page" aria-label="Home">
       <svg class="fn-icon" viewBox="0 0 24 24"><path d="M4 11.2 12 4l8 7.2"/><path d="M6 9.8v9.7h12V9.8"/><path d="M10 19.5v-5h4v5"/></svg>
       <span class="dock-tip">Home</span>
     </a>
@@ -75,19 +73,19 @@
     </a> -->
 
     <!-- Lists -->
-    <a href="/lists/allLists.html" aria-label="Lists">
+    <a href="lists/allLists.html" aria-label="Lists">
       <svg class="fn-icon" viewBox="0 0 24 24"><circle cx="5" cy="6.5" r="1.1"/><circle cx="5" cy="12" r="1.1"/><circle cx="5" cy="17.5" r="1.1"/><path d="M9.5 6.5H20M9.5 12H20M9.5 17.5H20"/></svg>
       <span class="dock-tip">My Lists</span>
     </a>
 
     <!-- Daily Logs -->
-    <!-- <a href=/dailyLogs.html" aria-label="Daily Logs">
+    <!-- <a href="dailyLogs.html" aria-label="Daily Logs">
       <svg class="fn-icon" viewBox="0 0 24 24"><rect x="5" y="3.5" width="14" height="17" rx="2.5"/><path d="M9 3.5v17M12.5 8.5H16M12.5 12H16"/></svg>
       <span class="dock-tip">Daily Logs</span>
     </a> -->
 
     <!-- Messages -->
-    <!-- <a href="/messages.html" aria-label="Messages">
+    <!-- <a href="messages.html" aria-label="Messages">
       <svg class="fn-icon" viewBox="0 0 24 24"><path d="M20 12a8 8 0 0 1-11.6 7.1L4 20l.9-4.4A8 8 0 1 1 20 12z"/><path d="M9 11h6M9 14h4"/></svg>
       <span class="dock-tip">Messages</span>
     </a> -->
@@ -98,8 +96,8 @@
   </div>
   <div class="dock-menu" id="dockMenu" role="menu">
     <!-- <button role="menuitem">New Event</button> -->
-    <button role="menuitem" onclick="location.href='/lists/allLists.html?new=1'">New List</button>
-    <!-- <button role="menuitem" onclick="location.href='/dailyLogs.html?new=1'">New Daily Log</button> -->
+    <button role="menuitem" onclick="location.href='lists/allLists.html?new=1'">New List</button>
+    <!-- <button role="menuitem" onclick="location.href='dailyLogs.html?new=1'">New Daily Log</button> -->
   </div>
 </nav>
 <div class="wrap">
@@ -110,7 +108,7 @@
       <h1>My Lists</h1>
     </div>
     <!-- Only shown when Firebase isn't configured (data is stored on this phone only) -->
-    <div class="banner" id="offlineBanner" hidden>Shared saving isn't set up yet, so lists are saved on this phone only. Add your Firebase settings to <b>/firebase/firebase-config.js</b> to share them.</div>
+    <div class="banner" id="offlineBanner" hidden>Shared saving isn't set up yet, so lists are saved on this phone only. Add your Firebase settings to <b>firebase/firebase-config.js</b> to share them.</div>
     <div class="tools" style="margin-top:16px">
       <button type="button" class="btn primary" id="newJob">New list</button>
       <!-- ADDED: button that shows/hides the "create a folder" form below -->
@@ -139,7 +137,7 @@
       <button type="button" class="back" id="backBtn">‹ All Lists </button>
       <div class="row1">
         <div>
-          <div class="eyebrow">Modern Haven Homes</div>
+          <!-- <div class="eyebrow">Modern Haven Homes</div> -->
           <!-- CHANGED: this heading used to just say "Punch List". It now has an id so the script can fill it with "Community - Lot" from the job info fields below. -->
           <h1 id="jobTitle"> New List</h1>
         </div>
@@ -204,7 +202,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <!-- Your own file that sets window.FIREBASE_CONFIG with your project's keys -->
-<script src="/firebase/firebase-config.js"></script>
+<script src="firebase/firebase-config.js"></script>
 <script>
 // ================= CONSTANTS AND DEFAULTS =================
 
