@@ -49,7 +49,7 @@ let fs = null; // fs = the Firestore database, or null if we're running in local
 // Only connect if the Firebase library loaded AND a real API key was provided (not the "PASTE..." placeholder)
 if (window.firebase && cfg.apiKey && !/PASTE/.test(cfg.apiKey)) {
   try {
-    firebase.initializeApp(cfg);
+    if (!firebase.apps.length) firebase.initializeApp(cfg);
     fs = firebase.firestore();
     fs.enablePersistence({ 
       synchronizeTabs: true 

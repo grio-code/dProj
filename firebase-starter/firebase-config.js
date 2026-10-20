@@ -11,8 +11,3 @@ window.FIREBASE_CONFIG = {
   measurementId: "G-37DJJ71KYC"
 };
  
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
-import { getAuth } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
-
-const app = initializeApp({ /* your existing firebaseConfig */ });
-export const auth = getAuth(app);

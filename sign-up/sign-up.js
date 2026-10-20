@@ -1,10 +1,10 @@
-import { auth, db } from "./firebase.js";
-import { createUserWithEmailAndPassword, updateProfile, deleteUser }
-  from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
-import { doc, setDoc, serverTimestamp }
-  from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js"; 
+
 
 (() => {
+  if (!firebase.apps.length) firebase.initializeApp(window.FIREBASE_CONFIG);
+  const auth = firebase.auth();
+  const db = firebase.firestore();
+
   // ---------- Settings you may want to change ----------
   const MAX_LOGO_BYTES = 2 * 1024 * 1024;                       // 2 MB
   const LOGO_TYPES = ['image/png', 'image/jpeg', 'image/webp']; // SVG is left out on purpose: it can carry scripts
@@ -203,24 +203,24 @@ import { doc, setDoc, serverTimestamp }
     const email = data.get('email'), password = data.get('password');
     let cred;
     try {
-      cred = await createUserWithEmailAndPassword(auth, email, password);
+      cred = await auth.createUserWithEmailAndPassword(email, password);
     } catch (e) {
       throw new Error(authMessage(e.code));
     }
     try {
-      await updateProfile(cred.user, { displayName: data.get('name') });
+      await cred.user.updateProfile({ displayName: data.get('name') });
       const logoFile = data.get('logo');
       const logo = logoFile instanceof File ? await shrinkLogo(logoFile) : null;
-      await setDoc(doc(db, 'users', cred.user.uid, 'profile', 'info'), {
+      await db.doc('users/' + cred.user.uid + '/profile/info').set({
         name: data.get('name'),
         phone: data.get('phone'),
         company: data.get('company'),
         logo,
-        createdAt: serverTimestamp()
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
       });
     } catch (e) {
       console.error(e);
-      await deleteUser(cred.user).catch(() => {});   // roll back so they can retry with the same email
+      await cred.user.delete().catch(() => {});
       throw new Error('We couldn\u2019t save your profile. Please try again.');
     }
   }
