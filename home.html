@@ -40,7 +40,7 @@
   <a class="fnav-brand" href="/home.html">
     <!-- <span class="fnav-mark"><svg class="fn-icon" viewBox="0 0 24 24" style="width:14px;height:14px;stroke:#fff;stroke-width:2.4"><path d="M9 6l6 6-6 6"/></svg></span> -->
     <!-- LOGO/NAME -->
-    Lupo Ipsum
+    Integrate
   </a>
   <nav class="fnav-links" id="fnavLinks" aria-label="Primary">
     <span class="fnav-pill" aria-hidden="true"></span>
@@ -50,8 +50,10 @@
     <a href="/dailyLogs.html">Daily Logs</a> -->
   </nav>
   <div class="fnav-actions">
-    <a class="fnav-btn fnav-btn--ghost" href="/login">Login</a>
-    <a class="fnav-btn fnav-btn--primary" href="/signup">Sign up</a>
+    <!-- <a class="fnav-btn fnav-btn--ghost" href="/login">Login</a>
+    <a class="fnav-btn fnav-btn--primary" href="/signup">Sign up</a> -->
+    <a class="fnav-btn fnav-btn" href="/login">Login</a>
+    <a class="fnav-btn fnav-btn" href="/signup">Sign up</a>
   </div>
 </header>
 
@@ -100,3 +102,14 @@
 </nav>
 </body>
 </html>
+
+<script>
+  // Keep the page content clear of the fixed top bar
+function setNavH() {
+  const n = document.getElementById("fnav");
+  if (n) document.documentElement.style.setProperty("--nav-h", n.offsetHeight + "px");
+}
+setNavH();
+window.addEventListener("resize", setNavH);
+window.addEventListener("load", setNavH);
+</script>

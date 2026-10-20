@@ -40,7 +40,7 @@
   <a class="fnav-brand" href="/home.html">
     <!-- <span class="fnav-mark"><svg class="fn-icon" viewBox="0 0 24 24" style="width:14px;height:14px;stroke:#fff;stroke-width:2.4"><path d="M9 6l6 6-6 6"/></svg></span> -->
     <!-- LOGO/NAME -->
-    Lupo Ipsum
+    Integrate
   </a>
   <nav class="fnav-links" id="fnavLinks" aria-label="Primary">
     <span class="fnav-pill" aria-hidden="true"></span>
@@ -50,8 +50,10 @@
     <a href="/dailyLogs.html">Daily Logs</a> -->
   </nav>
   <div class="fnav-actions">
-    <a class="fnav-btn fnav-btn--ghost" href="/login">Login</a>
-    <a class="fnav-btn fnav-btn--primary" href="/signup">Sign up</a>
+    <!-- <a class="fnav-btn fnav-btn--ghost" href="/login">Login</a>
+    <a class="fnav-btn fnav-btn--primary" href="/signup">Sign up</a> -->
+    <a class="fnav-btn fnav-btn" href="/login">Login</a>
+    <a class="fnav-btn fnav-btn" href="/signup">Sign up</a>
   </div>
 </header>
 
@@ -102,8 +104,8 @@
   <!-- ===== SCREEN 1: Jobs list (home). Hidden/shown by JS. ===== -->
   <div id="jobsView" hidden>
     <div class="titlebar">
-      <div class="eyebrow">Modern Haven Homes</div>
-      <h1>All Lists</h1>
+      <!-- <div class="eyebrow">Modern Haven Homes</div> -->
+      <h1>My Lists</h1>
     </div>
     <!-- Only shown when Firebase isn't configured (data is stored on this phone only) -->
     <div class="banner" id="offlineBanner" hidden>Shared saving isn't set up yet, so lists are saved on this phone only. Add your Firebase settings to <b>firebase-config.js</b> to share them.</div>
@@ -1302,6 +1304,14 @@ else
 {
   route();
 }
+// Keep the page content clear of the fixed top bar
+function setNavH() {
+  const n = document.getElementById("fnav");
+  if (n) document.documentElement.style.setProperty("--nav-h", n.offsetHeight + "px");
+}
+setNavH();
+window.addEventListener("resize", setNavH);
+window.addEventListener("load", setNavH);
 </script>
 </body>
 </html>
