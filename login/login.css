@@ -1,4 +1,4 @@
-  /* Keep the content below the fixed top bar (same rule as the other pages) */
+  /* Keep the content below the fixed top bar (same rule as the other pages)
   .wrap {
     padding-top: calc(var(--nav-h, 72px) + env(safe-area-inset-top, 0px) + 16px);
     padding-bottom: calc(32px + env(safe-area-inset-bottom, 0px));
@@ -129,4 +129,4 @@
     font-size: 13px;
     line-height: 1.5;
     color: var(--lg-muted);
-  }
+  } 
