@@ -20,11 +20,12 @@
 <link href="/lists/list.css" rel="stylesheet">
 <link href="/login/login.css" rel="stylesheet">
 <link href=""/login/login.js"" rel="script">
+<script src="/navigation/auth-nav.js"></script>
 
 <!-- Firebase libraries (compat builds), same version as the other pages, plus Auth -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-<script src="firebase-config.js"></script>
+<script src="/firebase/firebase-config.js"></script>
 
 </head>
 <body>
@@ -113,7 +114,7 @@
     </div>
 
     <!-- Shown only when Firebase isn't configured, same wording style as the All Lists page -->
-    <div class="banner login-msg" id="offlineBanner" hidden>Sign-in isn't set up yet. Add your Firebase settings to <b>firebase-config.js</b> and turn on Google sign-in in the Firebase console.</div>
+    <div class="banner login-msg" id="offlineBanner" hidden>Sign-in isn't set up yet. Add your Firebase settings to <b>/firebase/firebase-config.js</b> and turn on Google sign-in in the Firebase console.</div>
 
     <div class="login-card">
       <p>Sign in to open your punch lists.</p>

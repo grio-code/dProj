@@ -23,6 +23,8 @@
 <link href="/navigation/nav.css" rel="stylesheet">
 <script src="/navigation/nav.js" defer></script>
 <link href="/lists/list.css" rel="stylesheet">
+<script src="/navigation/auth-nav.js"></script>
+ 
 </head>
 <body>
 <!-- Navigation -->
@@ -108,7 +110,7 @@
       <h1>My Lists</h1>
     </div>
     <!-- Only shown when Firebase isn't configured (data is stored on this phone only) -->
-    <div class="banner" id="offlineBanner" hidden>Shared saving isn't set up yet, so lists are saved on this phone only. Add your Firebase settings to <b>firebase-config.js</b> to share them.</div>
+    <div class="banner" id="offlineBanner" hidden>Shared saving isn't set up yet, so lists are saved on this phone only. Add your Firebase settings to <b>/firebase/firebase-config.js</b> to share them.</div>
     <div class="tools" style="margin-top:16px">
       <button type="button" class="btn primary" id="newJob">New list</button>
       <!-- ADDED: button that shows/hides the "create a folder" form below -->
@@ -202,7 +204,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <!-- Your own file that sets window.FIREBASE_CONFIG with your project's keys -->
-<script src="firebase-config.js"></script>
+<script src="/firebase/firebase-config.js"></script>
 <script>
 // ================= CONSTANTS AND DEFAULTS =================
 
