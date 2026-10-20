@@ -1,0 +1,101 @@
+/* Sign-up page extras. The form also carries the .login-form class (see signup.html), so inputs, labels,
+   the password Show button and the full-width Create account button all come from login.css and match the login page.
+   This file only adds what login.css doesn't have: error text, the strength bar and the logo upload.
+   It uses the same --lg-* colors as login.css, so light and dark mode stay in step. Load it AFTER login.css. */
+
+/* Plain-text label for the logo row (the real <label> styles in login.css can't be used because this row is a box) */
+.signup-form .lbl {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 12px;
+  color: var(--lg-muted);
+}
+
+/* Hint and error text under fields */
+.f-hint {
+  font-family: "IBM Plex Sans", system-ui, sans-serif;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--lg-muted);
+}
+.f-err {
+  font-family: "IBM Plex Sans", system-ui, sans-serif;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--danger);
+}
+.f-err:empty { display: none; }
+.signup-form input[aria-invalid="true"] { border-color: var(--danger); }
+
+/* Password strength bar */
+.pw-meter {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--lg-line);
+  overflow: hidden;
+}
+.pw-meter i {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: var(--danger);
+  transition: width .25s, background .25s;
+}
+.pw-meter[data-level="2"] i { background: var(--accent); }
+.pw-meter[data-level="3"] i { background: var(--done); }
+
+/* Logo upload: the whole box is a label for the hidden file input, so clicking or dropping a file works */
+.signup-form .logo-drop {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px;
+  background: transparent;
+  border: 1px dashed var(--lg-line);
+  border-radius: 10px;
+  font-family: "IBM Plex Sans", system-ui, sans-serif;
+  font-size: 15px;
+  color: var(--lg-text);
+  cursor: pointer;
+}
+.signup-form .logo-drop:hover,
+.signup-form .logo-drop.is-over { border-color: var(--lg-text); }
+.signup-form .logo-drop:focus-within { outline: 2px solid var(--lg-text); outline-offset: 1px; }
+
+/* Visually hide the real file input (login.css would otherwise style it like a text field) */
+.signup-form .logo-drop input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.logo-preview {
+  flex: none;
+  width: 64px;
+  height: 64px;
+  display: grid;
+  place-items: center;
+  background: var(--bg);
+  border: 1px solid var(--lg-line);
+  border-radius: 8px;
+  overflow: hidden;
+  font-family: "IBM Plex Sans", system-ui, sans-serif;
+  font-size: 12px;
+  text-align: center;
+  color: var(--lg-muted);
+}
+.logo-preview img { width: 100%; height: 100%; object-fit: contain; }
+
+.logo-text { display: grid; gap: 2px; min-width: 0; }
+.logo-text b { font-weight: 600; color: var(--lg-text); overflow-wrap: anywhere; }
+
+/* Remove button: login.css makes every .btn in the form full width, so undo that here */
+.signup-form .logo-remove {
+  width: auto;
+  min-height: 36px;
+  margin-left: auto;
+}

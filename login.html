@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Log in · Integrate Software</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Integrate Software">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#eceeea" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#151a19" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+
+<link href="nav-bar/nav.css" rel="stylesheet">
+<link href="all-lists/list.css" rel="stylesheet">
+<link href="login-logout/login.css" rel="stylesheet">
+
+</head>
+<body>
+
+<!-- Navigation -->
+<!-- Goo filter for the dock (include once) -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <filter id="fn-goo">
+    <feGaussianBlur in="SourceGraphic" stdDeviation="8" result="b"/>
+    <feColorMatrix in="b" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 22 -10" result="g"/>
+    <feComposite in="SourceGraphic" in2="g" operator="atop"/>
+  </filter>
+</svg>
+
+<!-- Top bar -->
+<header class="fnav" id="fnav">
+  <a class="fnav-brand" href="home.html">
+    <!-- <span class="fnav-mark"><svg class="fn-icon" viewBox="0 0 24 24" style="width:14px;height:14px;stroke:#fff;stroke-width:2.4"><path d="M9 6l6 6-6 6"/></svg></span> -->
+    
+    <!-- LOGO/NAME -->
+    Integrate
+  </a>
+  <nav class="fnav-links" id="fnavLinks" aria-label="Primary">
+    <span class="fnav-pill" aria-hidden="true"></span>
+    <!-- <a href="home.html" aria-current="page">Home</a>
+    <a href="calendar.html">Calender</a>
+    <a href="lists/allLists.html">Lists</a>
+    <a href="dailyLogs.html">Daily Logs</a> -->
+  </nav>
+  <div class="fnav-actions">
+    <!-- <a class="fnav-btn fnav-btn--ghost" href="login.html">Login</a>
+    <a class="fnav-btn fnav-btn--primary" href="signup.html">Sign up</a> -->
+    <a class="fnav-btn" href="login/login.html">Login</a>
+    <a class="fnav-btn" href="signup.html">Sign up</a>
+  </div>
+</header>
+
+<!-- Bottom dock -->
+<nav class="dock" id="dock" aria-label="Quick navigation">
+  <div class="dock-shape" aria-hidden="true"><span class="dock-bar"></span><span class="dock-blob"></span></div>
+  <div class="dock-items">
+    <!-- Home -->
+    <a href="index.html" aria-current="page" aria-label="Home">
+      <svg class="fn-icon" viewBox="0 0 24 24"><path d="M4 11.2 12 4l8 7.2"/><path d="M6 9.8v9.7h12V9.8"/><path d="M10 19.5v-5h4v5"/></svg>
+      <span class="dock-tip">Home</span>
+    </a>
+    <!-- Calendar -->
+    <!-- <a href="/calendar.html" aria-label="Calendar">
+      <svg class="fn-icon" viewBox="0 0 24 24"><rect x="4" y="5.5" width="16" height="14.5" rx="3"/><path d="M8 3.5v4M16 3.5v4M4 10.5h16"/></svg>
+      <span class="dock-tip">Calendar</span>
+    </a> -->
+
+    <!-- Lists -->
+    <a href="allLists.html" aria-label="Lists">
+      <svg class="fn-icon" viewBox="0 0 24 24"><circle cx="5" cy="6.5" r="1.1"/><circle cx="5" cy="12" r="1.1"/><circle cx="5" cy="17.5" r="1.1"/><path d="M9.5 6.5H20M9.5 12H20M9.5 17.5H20"/></svg>
+      <span class="dock-tip">My Lists</span>
+    </a>
+
+    <!-- Daily Logs -->
+    <!-- <a href=/dailyLogs.html" aria-label="Daily Logs">
+      <svg class="fn-icon" viewBox="0 0 24 24"><rect x="5" y="3.5" width="14" height="17" rx="2.5"/><path d="M9 3.5v17M12.5 8.5H16M12.5 12H16"/></svg>
+      <span class="dock-tip">Daily Logs</span>
+    </a> -->
+
+    <!-- Messages -->
+    <!-- <a href="/messages.html" aria-label="Messages">
+      <svg class="fn-icon" viewBox="0 0 24 24"><path d="M20 12a8 8 0 0 1-11.6 7.1L4 20l.9-4.4A8 8 0 1 1 20 12z"/><path d="M9 11h6M9 14h4"/></svg>
+      <span class="dock-tip">Messages</span>
+    </a> -->
+
+    <button class="dock-fab" id="dockFab" aria-label="Create" aria-expanded="false" aria-controls="dockMenu">
+      <svg class="fn-icon" viewBox="0 0 24 24" style="stroke-width:2"><path d="M12 5v14M5 12h14"/></svg>
+    </button>
+  </div>
+  <div class="dock-menu" id="dockMenu" role="menu">
+    <!-- <button role="menuitem">New Event</button> -->
+    <button role="menuitem" onclick="location.href='allLists.html?new=1'">New List</button>
+    <!-- <button role="menuitem" onclick="location.href='dailyLogs.html?new=1'">New Daily Log</button> -->
+  </div>
+</nav>
+
+<div class="wrap">
+  <div class="login">
+    <div class="titlebar">
+      <!-- <div class="eyebrow">Modern Haven Homes</div> -->
+      <h1>Login</h1>
+    </div>
+
+    <!-- REMOVED: the "Sign-in isn't set up yet" Firebase banner, the Continue with Google button, and the "or" divider -->
+
+    <div class="login-card">
+      <p>Sign in to open your punch lists.</p>
+
+      <!-- onsubmit stops the browser from reloading the page and putting the email and password in the address bar.
+           Nothing is wired to this form yet. -->
+      <form class="login-form" id="loginForm" novalidate onsubmit="event.preventDefault()">
+        <div class="f">
+          <label for="loginEmail">Email</label>
+          <input id="loginEmail" type="email" inputmode="email" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="you@example.com" required>
+        </div>
+        <div class="f">
+          <label for="loginPassword">Password</label>
+          <div class="pw-wrap">
+            <input id="loginPassword" type="password" autocomplete="current-password" placeholder="Your password" required>
+            <button type="button" class="pw-toggle" id="pwToggle" aria-controls="loginPassword" aria-pressed="false">Show</button>
+          </div>
+        </div>
+        <button class="btn primary" type="submit" id="emailBtn">Log in</button>
+        <div class="login-links">
+          <button type="button" class="link" id="forgotBtn">Forgot password?</button>
+          <a class="link" href="signup.html">Create an account</a>
+        </div>
+      </form>
+
+      <div class="banner login-msg" id="msg" role="alert" hidden></div>
+    </div>
+
+    <p class="login-foot">Anyone you send a list link to can still open and check it off without signing in.</p>
+  </div>
+</div>
+</body>
+</html>

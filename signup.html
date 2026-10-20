@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+<m=eta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sign up · Integrate Software</title>
+<meta name="theme-color" content="#eceeea" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#151a19" media="(prefers-color-scheme: dark)">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+
+<!-- Paths below assume this file sits next to login.html. If you move it into a folder, add ../ to each one. -->
+<link href="nav-bar/nav.css" rel="stylesheet">
+<link href="all-lists/list.css" rel="stylesheet">
+<link href="login-logout/login.css" rel="stylesheet">
+<link href="signup.css" rel="stylesheet">
+<script src="nav-bar/nav.js" defer></script>
+<script src="signup.js" defer></script>
+</head>
+<body>
+
+<!-- Goo filter for the dock -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <filter id="fn-goo">
+    <feGaussianBlur in="SourceGraphic" stdDeviation="8" result="b"/>
+    <feColorMatrix in="b" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 22 -10" result="g"/>
+    <feComposite in="SourceGraphic" in2="g" operator="atop"/>
+  </filter>
+</svg>
+
+<!-- Top bar -->
+<header class="fnav" id="fnav">
+  <a class="fnav-brand" href="index.html">Integrate</a>
+  <nav class="fnav-links" id="fnavLinks" aria-label="Primary"><span class="fnav-pill" aria-hidden="true"></span></nav>
+  <div class="fnav-actions">
+    <a class="fnav-btn" href="login.html">Login</a>
+    <a class="fnav-btn" href="signup.html">Sign up</a>
+  </div>
+</header>
+
+<!-- Bottom dock -->
+<nav class="dock" id="dock" aria-label="Quick navigation">
+  <div class="dock-shape" aria-hidden="true"><span class="dock-bar"></span><span class="dock-blob"></span></div>
+  <div class="dock-items">
+    <a href="index.html" aria-label="Home">
+      <svg class="fn-icon" viewBox="0 0 24 24"><path d="M4 11.2 12 4l8 7.2"/><path d="M6 9.8v9.7h12V9.8"/><path d="M10 19.5v-5h4v5"/></svg>
+      <span class="dock-tip">Home</span>
+    </a>
+    <a href="allLists.html" aria-label="Lists">
+      <svg class="fn-icon" viewBox="0 0 24 24"><circle cx="5" cy="6.5" r="1.1"/><circle cx="5" cy="12" r="1.1"/><circle cx="5" cy="17.5" r="1.1"/><path d="M9.5 6.5H20M9.5 12H20M9.5 17.5H20"/></svg>
+      <span class="dock-tip">My Lists</span>
+    </a>
+    <button class="dock-fab" id="dockFab" aria-label="Create" aria-expanded="false" aria-controls="dockMenu">
+      <svg class="fn-icon" viewBox="0 0 24 24" style="stroke-width:2"><path d="M12 5v14M5 12h14"/></svg>
+    </button>
+  </div>
+  <div class="dock-menu" id="dockMenu" role="menu">
+    <button role="menuitem" onclick="location.href='allLists.html?new=1'">New List</button>
+  </div>
+</nav>
+
+<div class="wrap">
+  <div class="login">
+    <div class="titlebar"><h1>Sign up</h1></div>
+
+    <div class="login-card">
+      <p>Create your Integrate Software account.</p>
+
+      <form class="signup-form login-form" id="signupForm" novalidate>
+        <div class="f">
+          <label for="suName">Full name</label>
+          <input id="suName" name="name" type="text" autocomplete="name" maxlength="80" placeholder="Jane Smith" required>
+          <div class="f-err" id="suNameErr" role="alert"></div>
+        </div>
+
+        <div class="f">
+          <label for="suPhone">Phone number</label>
+          <input id="suPhone" name="phone" type="tel" inputmode="tel" autocomplete="tel" maxlength="20" placeholder="(555) 123-4567" required>
+          <div class="f-err" id="suPhoneErr" role="alert"></div>
+        </div>
+
+        <div class="f">
+          <label for="suEmail">Email</label>
+          <input id="suEmail" name="email" type="email" inputmode="email" autocomplete="email" autocapitalize="none" autocorrect="off" spellcheck="false" maxlength="120" placeholder="you@example.com" required>
+          <div class="f-err" id="suEmailErr" role="alert"></div>
+        </div>
+
+        <div class="f">
+          <label for="suCompany">Company name</label>
+          <input id="suCompany" name="company" type="text" autocomplete="organization" maxlength="100" placeholder="Company name" required>
+          <div class="f-err" id="suCompanyErr" role="alert"></div>
+        </div>
+
+        <div class="f">
+          <span id="logoLabel" class="lbl">Company logo</span>
+          <label class="logo-drop" id="logoDrop">
+            <input id="suLogo" name="logo" type="file" accept="image/png,image/jpeg,image/webp" aria-labelledby="logoLabel" aria-describedby="logoHint suLogoErr">
+            <span class="logo-preview" id="logoPreview">No logo</span>
+            <span class="logo-text">
+              <b id="logoName">Choose or drop an image</b>
+              <span class="f-hint" id="logoHint">PNG, JPG or WebP, up to 2 MB</span>
+            </span>
+            <button type="button" class="btn logo-remove" id="logoRemove" hidden>Remove</button>
+          </label>
+          <div class="f-err" id="suLogoErr" role="alert"></div>
+        </div>
+
+        <div class="f">
+          <label for="suPassword">Password</label>
+          <div class="pw-wrap">
+            <input id="suPassword" name="password" type="password" autocomplete="new-password" placeholder="At least 8 characters" required aria-describedby="pwHint suPasswordErr">
+            <button type="button" class="pw-toggle" data-for="suPassword" aria-controls="suPassword" aria-pressed="false">Show</button>
+          </div>
+          <div class="pw-meter" id="pwMeter" data-level="0" aria-hidden="true"><i></i></div>
+          <div class="f-hint" id="pwHint">Use 8 or more characters with at least one letter and one number.</div>
+          <div class="f-err" id="suPasswordErr" role="alert"></div>
+        </div>
+
+        <div class="f">
+          <label for="suConfirm">Confirm password</label>
+          <div class="pw-wrap">
+            <input id="suConfirm" type="password" autocomplete="new-password" placeholder="Type it again" required>
+            <button type="button" class="pw-toggle" data-for="suConfirm" aria-controls="suConfirm" aria-pressed="false">Show</button>
+          </div>
+          <div class="f-err" id="suConfirmErr" role="alert"></div>
+        </div>
+
+        <button class="btn primary" type="submit" id="signupBtn">Create account</button>
+        <div class="login-links">
+          <a class="link" href="login.html">Already have an account? Log in</a>
+        </div>
+      </form>
+
+      <div class="banner login-msg" id="msg" role="alert" hidden></div>
+    </div>
+  </div>
+</div>
+</body>
+</html>
