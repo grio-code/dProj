@@ -170,6 +170,7 @@
       showMsg('Confirming your email\u2026', false);
       await auth.signInWithEmailLink(email, location.href);
       store.del('emailForSignIn');
+      store.set('signupVerifiedAt', String(Date.now())); // lets the tab that is still waiting know it can continue
       history.replaceState(null, '', PAGE_URL + (invitedWid ? '?w=' + encodeURIComponent(invitedWid) : ''));
       showMsg('');
       // onAuthStateChanged (below) takes it from here
@@ -411,6 +412,19 @@
     catch (e) { input.focus(); input.select(); showMsg('Select the link and copy it.', false); }
   });
   $('goApp').addEventListener('click', () => { location.href = APP_URL; });
+
+  // ================= Waiting tab: continue when the emailed link is confirmed in another tab =================
+  // Firebase usually syncs the sign-in between tabs by itself, but not always. This is the backup:
+  // the tab that opened the email link leaves a note, and this tab reloads and picks up the saved sign-in.
+  const loadedAt = Date.now();
+  function checkVerified() {
+    if (ctx.user) return;                                   // already signed in here
+    if (Number(store.get('signupVerifiedAt') || 0) > loadedAt) location.reload();
+  }
+  window.addEventListener('storage', e => { if (e.key === 'signupVerifiedAt') checkVerified(); });
+  window.addEventListener('focus', checkVerified);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) checkVerified(); });
+  setInterval(checkVerified, 3000);
 
   // ================= Start =================
   const isLink = auth.isSignInWithEmailLink(location.href);
