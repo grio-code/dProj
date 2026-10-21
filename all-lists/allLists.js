@@ -58,6 +58,10 @@ if (window.firebase && cfg.apiKey && !/PASTE/.test(cfg.apiKey)) {
     fs = null; 
   } // if anything fails, quietly fall back to local-only mode
 }
+// ADDED: who is signed in. uid stays null until Firebase tells us (see BOOT at the bottom), and stays null for guests opening a shared link.
+const authSvc = (fs && firebase.auth) ? firebase.auth() : null;
+let uid = null;
+const settingsPath = () => "users/" + uid + "/settings/app"; // each user's own trades, levels and folders
 // Local-only mode stores everything in the browser's localStorage under this key
 const LS = "punch-app-v1";
 // Load previously saved local data (or start empty if none / if it's corrupted)
@@ -488,7 +492,8 @@ function showJobs() {
   if (fs) {
     // Live-listen to the "jobs" collection so the list updates automatically
     document.getElementById("jobsSaved").textContent = "Loading…";
-    unsubs.push(fs.collection("jobs").onSnapshot(snap => {
+    if (!uid) { location.href = "login.html"; return; } // ADDED: the home screen needs a signed-in user
+    unsubs.push(fs.collection("jobs").where("ownerId", "==", uid).onSnapshot(snap => { // CHANGED: only this user's lists
       jobsList = {}; snap.docs.forEach(d => jobsList[d.id] = d.data());
       document.getElementById("jobsSaved").textContent = ""; renderJobs();
     }, 
@@ -566,16 +571,18 @@ window.addEventListener("popstate", route);
 // ================= TRADES AND LEVELS (shared, editable) =================
 // Save the trades and levels lists (to Firestore if connected, otherwise localStorage)
 // CHANGED: now saves foldersList too (it lives in the same record as trades and levels)
-function saveSettings() { 
-  if (fs) fs.doc("settings/app").set({ 
-    trades: TRADES, floors: FLOORS, folders: foldersList 
-  }).catch(() => toast("Couldn't save.")); 
-  else { 
-    local.trades = TRADES; 
-    local.floors = FLOORS; 
-    local.folders = foldersList; 
-    lsSave(); 
-  } }
+function saveSettings() {
+  if (fs) {
+    if (!uid) return; // guests opening a shared link have no settings to save
+    fs.doc(settingsPath()).set({ trades: TRADES, floors: FLOORS, folders: foldersList })
+      .catch(() => toast("Couldn't save."));
+  } else {
+    local.trades = TRADES;
+    local.floors = FLOORS;
+    local.folders = foldersList;
+    lsSave();
+  }
+}
 // Refresh every dropdown and tag list that depends on trades/levels, then redraw
 function applyTrades() {
   const tf = document.getElementById("tradeF"), cur = ui.trade;
@@ -608,19 +615,23 @@ function applyFolders() {
 
 // ================= EVENTS =================
 applyTrades(); // initial fill of the dropdowns
-// Load trades/levels: live from Firestore if connected, otherwise from localStorage
-if (fs) fs.doc("settings/app").onSnapshot(snap => { 
-  const d = snap.exists ? snap.data() : {}; 
-  TRADES = Array.isArray(d.trades) && d.trades.length ? d.trades : DEFAULT_TRADES.slice(); 
-  FLOORS = Array.isArray(d.floors) && d.floors.length ? d.floors : DEFAULT_FLOORS.slice(); 
-  foldersList = d.folders && typeof d.folders === "object" ? d.folders : {} /* ADDED: load folders */; 
-  applyTrades(); }, 
-  () => {}
-);
-else { 
-  if (Array.isArray(local.trades) && local.trades.length) TRADES = local.trades; 
-  if (Array.isArray(local.floors) && local.floors.length) FLOORS = local.floors; 
-  foldersList = local.folders || {}; /* ADDED: load folders saved on this phone */ applyTrades(); 
+// CHANGED: now a function that runs at boot, after we know who is signed in. Settings live under users/{uid}/settings/app.
+function loadSettings() {
+  if (fs && uid) {
+    fs.doc(settingsPath()).onSnapshot(snap => {
+      const d = snap.exists ? snap.data() : {};
+      TRADES = Array.isArray(d.trades) && d.trades.length ? d.trades : DEFAULT_TRADES.slice();
+      FLOORS = Array.isArray(d.floors) && d.floors.length ? d.floors : DEFAULT_FLOORS.slice();
+      foldersList = d.folders && typeof d.folders === "object" ? d.folders : {};
+      applyTrades();
+    }, () => {});
+  } else if (!fs) {
+    if (Array.isArray(local.trades) && local.trades.length) TRADES = local.trades;
+    if (Array.isArray(local.floors) && local.floors.length) FLOORS = local.floors;
+    foldersList = local.folders || {};
+    applyTrades();
+  }
+  // Guests (shared link, not signed in) just use the default trades and levels
 }
 // Click the × on a level tag to remove it (at least one must remain)
 document.getElementById("floorList").addEventListener("click", e => { 
@@ -687,9 +698,11 @@ document.getElementById("backBtn").addEventListener("click", () => go(null));
 // CHANGED: the "New list" code now lives in a function so it can be used from two places: the main "New list" button
 // (no folder) and the "New list here" link inside a folder. Creates a list with a random id and today's date, then opens it.
 function createJob(folderId) {
+  if (fs && !uid) { location.href = "login.html"; return; } // ADDED: must be signed in to make a list
   const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
   const today = new Date(); const d = today.getFullYear() + "-" + String(today.getMonth() + 1).padStart(2, "0") + "-" + String(today.getDate()).padStart(2, "0");
   const meta = { 
+    ownerId: uid, // ADDED: marks the list as belonging to the signed-in user
     date: d, 
     community: "", 
     address: "", 
@@ -1087,14 +1100,21 @@ document.addEventListener("submit", e => {
 // Hide the install tip if it was dismissed before, or if the app is already running from the home screen
 if (uiPrefs().tipHidden || navigator.standalone) document.getElementById("tip").hidden = true;
 ui.openFolders = uiPrefs().openFolders || {}; // ADDED: restore which folders were expanded last time
-// If we arrived from the dock's "New List" button, create a list right away and open it
-if (new URLSearchParams(location.search).get("new") === "1") {
-  history.replaceState(null, "", location.pathname); // clear ?new=1 so a refresh doesn't make another list
-  createJob("");                                     // makes the list, adds it to All Lists, and opens it
-} 
-else
-{
-  route();
+function boot() {
+  loadSettings();
+  // If we arrived from the dock's "New List" button, create a list right away and open it
+  if (new URLSearchParams(location.search).get("new") === "1") {
+    history.replaceState(null, "", location.pathname); // clear ?new=1 so a refresh doesn't make another list
+    createJob("");                                     // makes the list, adds it to All Lists, and opens it
+  } else {
+    route();
+  }
+}
+// ADDED: wait until Firebase knows who is signed in (or that nobody is), then start the app
+if (authSvc) {
+  const stopAuthWait = authSvc.onAuthStateChanged(user => { stopAuthWait(); uid = user ? user.uid : null; boot(); });
+} else {
+  boot();
 }
 // Keep the page content clear of the fixed top bar
 function setNavH() {

@@ -1,3 +1,4 @@
+//BEFORE SIGN UP
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -14,6 +15,33 @@ service cloud.firestore {
     }
 
     // Each signed-in user can only read/write their own profile data
+    match /users/{uid}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+  }
+}
+
+//WITH SIGN UP
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    match /jobs/{jobId} {
+      // Anyone with the link can open one list (this is what shared links use)
+      allow get: if true;
+      // Only the owner can list their lists, create them, or delete them
+      allow list: if request.auth != null && resource.data.ownerId == request.auth.uid;
+      allow create: if request.auth != null && request.resource.data.ownerId == request.auth.uid;
+      allow delete: if request.auth != null && resource.data.ownerId == request.auth.uid;
+      // Subs can check things off, but nobody can change who owns the list
+      allow update: if request.resource.data.ownerId == resource.data.ownerId;
+
+      match /{coll}/{docId} {
+        allow read, write: if coll in ['items', 'custom', 'rooms', 'hidden'];
+      }
+    }
+
+    // Each user's own profile and settings
     match /users/{uid}/{document=**} {
       allow read, write: if request.auth != null && request.auth.uid == uid;
     }
