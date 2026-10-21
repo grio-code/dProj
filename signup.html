@@ -3,32 +3,25 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Sign up · Integrate Software</title>
+<title>Create your workspace · Integrate Software</title>
 <meta name="theme-color" content="#eceeea" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#151a19" media="(prefers-color-scheme: dark)">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 
-<!-- Paths below assume this file sits next to login.html. If you move it into a folder, add ../ to each one. -->
+<!-- Paths assume this file sits next to login.html and allLists.html -->
 <link href="nav-bar/nav.css" rel="stylesheet">
 <link href="all-lists/list.css" rel="stylesheet">
 <link href="login-logout/login.css" rel="stylesheet">
-<link href="sign-up/sign-up.css" rel="stylesheet">
-<script src="sign-up/sign-up.js" defer></script>
+<link href="workspace/workspace.css" rel="stylesheet">
 
+<!-- Firebase (compat build) + your project settings. These must load BEFORE signup.js -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="firebase-starter/firebase-config.js"></script>
-
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-<script src="firebase-starter/firebase-config.js"></script>
-
 <script src="nav-bar/nav.js" defer></script>
-<script src="nav-bar/auth-ui.js" defer></script>
-
+<script src="signup.js" defer></script>
 </head>
 <body>
 
@@ -51,7 +44,7 @@
   </div>
 </header>
 
-<!-- Bottom dock -->
+<!-- Bottom dock (kept so nav.js works; it stays hidden here because nobody is "signed in" to the app yet) -->
 <nav class="dock" id="dock" aria-label="Quick navigation">
   <div class="dock-shape" aria-hidden="true"><span class="dock-bar"></span><span class="dock-blob"></span></div>
   <div class="dock-items">
@@ -74,75 +67,137 @@
 
 <div class="wrap">
   <div class="login">
-    <div class="titlebar"><h1>Sign up</h1></div>
+    <div class="titlebar"><h1 id="stepTitle">Create your workspace</h1></div>
 
-    <div class="login-card">
-      <p>Create your Integrate Software account.</p>
+    <!-- Progress. JS marks the finished and current steps. -->
+    <ol class="ws-steps" id="wsSteps" aria-label="Progress">
+      <li data-s="email">Email</li>
+      <li data-s="verify">Verify</li>
+      <li data-s="workspace">Workspace</li>
+      <li data-s="profile">Profile</li>
+      <li data-s="invite">Invite</li>
+    </ol>
 
-      <form class="signup-form login-form" id="signupForm" novalidate>
-        <div class="f">
-          <label for="suName">Full name</label>
-          <input id="suName" name="name" type="text" autocomplete="name" maxlength="80" placeholder="Jane Smith" required>
-          <div class="f-err" id="suNameErr" role="alert"></div>
-        </div>
+    <div class="login-card ws-form">
 
-        <div class="f">
-          <label for="suPhone">Phone number</label>
-          <input id="suPhone" name="phone" type="tel" inputmode="tel" autocomplete="tel" maxlength="20" placeholder="(555) 123-4567" required>
-          <div class="f-err" id="suPhoneErr" role="alert"></div>
-        </div>
-
-        <div class="f">
-          <label for="suEmail">Email</label>
-          <input id="suEmail" name="email" type="email" inputmode="email" autocomplete="email" autocapitalize="none" autocorrect="off" spellcheck="false" maxlength="120" placeholder="you@example.com" required>
-          <div class="f-err" id="suEmailErr" role="alert"></div>
-        </div>
-
-        <div class="f">
-          <label for="suCompany">Company name</label>
-          <input id="suCompany" name="company" type="text" autocomplete="organization" maxlength="100" placeholder="Company name" required>
-          <div class="f-err" id="suCompanyErr" role="alert"></div>
-        </div>
-
-        <div class="f">
-          <span id="logoLabel" class="lbl">Company logo</span>
-          <label class="logo-drop" id="logoDrop">
-            <input id="suLogo" name="logo" type="file" accept="image/png,image/jpeg,image/webp" aria-labelledby="logoLabel" aria-describedby="logoHint suLogoErr">
-            <span class="logo-preview" id="logoPreview">No logo</span>
-            <span class="logo-text">
-              <b id="logoName">Choose or drop an image</b>
-              <span class="f-hint" id="logoHint">PNG, JPG or WebP, up to 2 MB</span>
-            </span>
-            <button type="button" class="btn logo-remove" id="logoRemove" hidden>Remove</button>
-          </label>
-          <div class="f-err" id="suLogoErr" role="alert"></div>
-        </div>
-
-        <div class="f">
-          <label for="suPassword">Password</label>
-          <div class="pw-wrap">
-            <input id="suPassword" name="password" type="password" autocomplete="new-password" placeholder="At least 8 characters" required aria-describedby="pwHint suPasswordErr">
-            <button type="button" class="pw-toggle" data-for="suPassword" aria-controls="suPassword" aria-pressed="false">Show</button>
+      <!-- STEP 1: Enter your email -->
+      <section class="step" data-step="email">
+        <p>Use your work email so teammates can find you. We'll send you a link to confirm it.</p>
+        <form class="login-form" id="emailForm" novalidate>
+          <div class="f">
+            <label for="wEmail">Email</label>
+            <input id="wEmail" type="email" inputmode="email" autocomplete="email" autocapitalize="none" autocorrect="off" spellcheck="false" maxlength="120" placeholder="you@company.com" required>
+            <div class="f-err" id="wEmailErr" role="alert"></div>
           </div>
-          <div class="pw-meter" id="pwMeter" data-level="0" aria-hidden="true"><i></i></div>
-          <div class="f-hint" id="pwHint">Use 8 or more characters with at least one letter and one number.</div>
-          <div class="f-err" id="suPasswordErr" role="alert"></div>
-        </div>
+          <button class="btn primary" type="submit" id="emailBtn">Continue</button>
+          <div class="login-links"><a class="link" href="login.html">Already have an account? Log in</a></div>
+        </form>
+      </section>
 
-        <div class="f">
-          <label for="suConfirm">Confirm password</label>
-          <div class="pw-wrap">
-            <input id="suConfirm" type="password" autocomplete="new-password" placeholder="Type it again" required>
-            <button type="button" class="pw-toggle" data-for="suConfirm" aria-controls="suConfirm" aria-pressed="false">Show</button>
-          </div>
-          <div class="f-err" id="suConfirmErr" role="alert"></div>
-        </div>
-
-        <button class="btn primary" type="submit" id="signupBtn">Create account</button>
+      <!-- STEP 2: Verify your email -->
+      <section class="step" data-step="verify" hidden>
+        <p>We sent a confirmation link to <b id="verifyEmail"></b>. Open it on this device. This page will continue on its own once you do.</p>
+        <p class="f-hint">Can't find it? Check your spam folder.</p>
         <div class="login-links">
-          <a class="link" href="login.html">Already have an account? Log in</a>
+          <button type="button" class="link" id="resendBtn">Resend email</button>
+          <button type="button" class="link" id="changeEmailBtn">Use a different email</button>
         </div>
-      </form>
+      </section>
+
+      <!-- STEP 2b: the link was opened on a different device or browser, so we need the email again -->
+      <section class="step" data-step="confirmEmail" hidden>
+        <p>To finish confirming, type the email address the link was sent to.</p>
+        <form class="login-form" id="confirmForm" novalidate>
+          <div class="f">
+            <label for="cEmail">Email</label>
+            <input id="cEmail" type="email" inputmode="email" autocomplete="email" autocapitalize="none" autocorrect="off" spellcheck="false" maxlength="120" placeholder="you@company.com" required>
+            <div class="f-err" id="cEmailErr" role="alert"></div>
+          </div>
+          <button class="btn primary" type="submit" id="confirmBtn">Confirm</button>
+        </form>
+      </section>
+
+      <!-- STEP 3: Name your workspace -->
+      <section class="step" data-step="workspace" hidden>
+        <p>This is the name of your team, company or project. Your teammates will see it when they join.</p>
+        <form class="login-form" id="workspaceForm" novalidate>
+          <div class="f">
+            <label for="wName">Workspace name</label>
+            <input id="wName" type="text" maxlength="50" autocomplete="organization" placeholder="Acme Builders" required>
+            <div class="f-hint"><span id="wNameCount">0</span>/50</div>
+            <div class="f-err" id="wNameErr" role="alert"></div>
+          </div>
+          <button class="btn primary" type="submit" id="workspaceBtn">Create workspace</button>
+        </form>
+      </section>
+
+      <!-- STEP 4: Set up your profile -->
+      <section class="step" data-step="profile" hidden>
+        <p id="profileIntro">Add your name and a photo so your team knows who you are.</p>
+        <form class="login-form" id="profileForm" novalidate>
+          <div class="f">
+            <label for="pName">Display name</label>
+            <input id="pName" type="text" maxlength="60" autocomplete="name" placeholder="Jane Smith" required>
+            <div class="f-err" id="pNameErr" role="alert"></div>
+          </div>
+          <div class="f">
+            <label for="pUser">Username</label>
+            <input id="pUser" type="text" maxlength="30" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="jane.smith" required>
+            <div class="f-hint">3 to 30 characters: lowercase letters, numbers, periods, dashes and underscores.</div>
+            <div class="f-err" id="pUserErr" role="alert"></div>
+          </div>
+          <div class="f">
+            <span class="lbl" id="photoLabel">Profile photo (optional)</span>
+            <label class="photo-drop" id="photoDrop">
+              <input id="pPhoto" type="file" accept="image/png,image/jpeg,image/webp" aria-labelledby="photoLabel">
+              <span class="photo-preview" id="photoPreview">No photo</span>
+              <span class="photo-text">
+                <b id="photoName">Choose or drop an image</b>
+                <span class="f-hint">PNG, JPG or WebP, up to 2 MB</span>
+              </span>
+              <button type="button" class="btn photo-remove" id="photoRemove" hidden>Remove</button>
+            </label>
+            <div class="f-err" id="pPhotoErr" role="alert"></div>
+          </div>
+          <div class="f">
+            <label for="pPassword">Password</label>
+            <div class="pw-wrap">
+              <input id="pPassword" type="password" autocomplete="new-password" placeholder="At least 8 characters" required>
+              <button type="button" class="pw-toggle" id="pwToggle" aria-controls="pPassword" aria-pressed="false">Show</button>
+            </div>
+            <div class="f-hint">You'll use this with your email to log in next time.</div>
+            <div class="f-err" id="pPasswordErr" role="alert"></div>
+          </div>
+          <button class="btn primary" type="submit" id="profileBtn">Continue</button>
+        </form>
+      </section>
+
+      <!-- STEP 5: Invite team members (workspace creators only) -->
+      <section class="step" data-step="invite" hidden>
+        <p>Add the email addresses of coworkers you want to invite, separated by commas, spaces or new lines. You can skip this and invite people later.</p>
+        <form class="login-form" id="inviteForm" novalidate>
+          <div class="f">
+            <label for="iEmails">Teammate emails</label>
+            <textarea id="iEmails" rows="4" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="sam@company.com, alex@company.com"></textarea>
+            <div class="f-err" id="iEmailsErr" role="alert"></div>
+          </div>
+          <button class="btn primary" type="submit" id="inviteBtn">Send invites</button>
+          <div class="login-links"><button type="button" class="link" id="skipInvite">Skip for now</button></div>
+        </form>
+      </section>
+
+      <!-- DONE -->
+      <section class="step" data-step="done" hidden>
+        <p id="doneText"></p>
+        <p class="f-hint" id="doneInvites" hidden></p>
+        <div class="f" id="linkRow" hidden>
+          <label for="shareLink">Invite link</label>
+          <input id="shareLink" type="text" readonly>
+          <div class="f-hint">Only people you've invited by email can join with this link.</div>
+          <button type="button" class="btn" id="copyLink">Copy link</button>
+        </div>
+        <button class="btn primary" type="button" id="goApp" style="width:100%;min-height:48px;margin-top:14px">Go to my lists</button>
+      </section>
 
       <div class="banner login-msg" id="msg" role="alert" hidden></div>
     </div>

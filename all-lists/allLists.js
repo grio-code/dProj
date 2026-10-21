@@ -2,60 +2,18 @@
 
 // Starting list of trades (the subcontractor types an item can be assigned to)
 const DEFAULT_TRADES = [
-  "Silt Fence",  
-  "Excavation",
-  "Concrete",
-  "Damp Proofing",
-  "Sewer & Water",
-  "Flatwork",
-  "Structual Steel",
-  "Rough Material",
-  "Truss where applicable",
-  "Framing Labor",
-  "Roofing",
-  "Windows",
-  "Doors",
-  "Plumbing",
-  "Plumbing Material (Fixtures and valves)",
-  "Heating & Cooling",
-  "Electric",
-  "Fireplace",
-  "Insulation",
-  "Drywall",
-  "Paint",
-  "Capeting & Hardsurfaces",
-  "Wood Stairs",
-  "Millwork",
-  "Cabinets",
-  "Counter Tops",
-  "Trim Labor",
-  "Appliance's",
-  "Masonry",
-  "Siding Material",
-  "Siding Labor",
-  "Garage Doors",
-  "Gutters",
-  "Irrigation",
-  "Landscaping--Estimate",
-  "Shower Doors",
-  "Mirrors",
-  "Lighting",
-  "Closet Shelving",
-  "A/V",
-  "Cleaning",
-  "Dumpsters",
-  "POL",
-  "Engineering",
-  "Archetecture",
-  "Energy Documents & Testing",
-  "Soil Test",
-  "Management Fee",
-  "P/O",
-  "Internal Commission",
-  "Permits",
-  "Misc/Utilities",
-  "Insurance",
-  "Marketing",
+  "Paint", 
+  "Drywall", 
+  "Carpentry", 
+  "Electrical", 
+  "Plumbing", 
+  "HVAC", 
+  "Flooring", 
+  "Tile", 
+  "Cabinets", 
+  "Windows/Doors",
+  "Cleaning", 
+  "Exterior", 
   "General"
 ];
 let TRADES = DEFAULT_TRADES.slice(); // working copy that the user can edit (slice() makes a copy)
@@ -68,8 +26,7 @@ const ROOMS = [];
 const DEFAULT_FLOORS = [
   "Second Floor", 
   "First Floor", 
-  "Exterior",
-  "Basement"
+  "Exterior"
 ];
 let FLOORS = DEFAULT_FLOORS.slice();
 // If a room points at a level that was deleted, fall back to the first level
@@ -104,7 +61,8 @@ if (window.firebase && cfg.apiKey && !/PASTE/.test(cfg.apiKey)) {
 // ADDED: who is signed in. uid stays null until Firebase tells us (see BOOT at the bottom), and stays null for guests opening a shared link.
 const authSvc = (fs && firebase.auth) ? firebase.auth() : null;
 let uid = null;
-const settingsPath = () => "users/" + uid + "/settings/app"; // each user's own trades, levels and folders
+let wid = null; // ADDED: the signed-in user's workspace. Lists, trades, levels and folders are shared by everyone in it.
+const settingsPath = () => "workspaces/" + wid + "/settings/app"; // CHANGED: shared by the whole workspace
 // Local-only mode stores everything in the browser's localStorage under this key
 const LS = "punch-app-v1";
 // Load previously saved local data (or start empty if none / if it's corrupted)
@@ -539,7 +497,8 @@ function showJobs() {
     // Live-listen to the "jobs" collection so the list updates automatically
     document.getElementById("jobsSaved").textContent = "Loading…";
     if (!uid) { location.href = "login.html"; return; } // ADDED: the home screen needs a signed-in user
-    unsubs.push(fs.collection("jobs").where("ownerId", "==", uid).onSnapshot(snap => { // CHANGED: only this user's lists
+    if (!wid) { location.href = "signup.html"; return; } // ADDED: no workspace yet, so finish setting one up
+    unsubs.push(fs.collection("jobs").where("workspaceId", "==", wid).onSnapshot(snap => { // CHANGED: every list in this workspace
       jobsList = {}; snap.docs.forEach(d => jobsList[d.id] = d.data());
       document.getElementById("jobsSaved").textContent = ""; renderJobs();
     }, 
@@ -620,7 +579,7 @@ window.addEventListener("popstate", route);
 // CHANGED: now saves foldersList too (it lives in the same record as trades and levels)
 function saveSettings() {
   if (fs) {
-    if (!uid) return; // guests opening a shared link have no settings to save
+    if (!uid || !wid) return; // guests opening a shared link have no settings to save
     fs.doc(settingsPath()).set({ trades: TRADES, floors: FLOORS, folders: foldersList })
       .catch(() => toast("Couldn't save."));
   } else {
@@ -664,7 +623,7 @@ function applyFolders() {
 applyTrades(); // initial fill of the dropdowns
 // CHANGED: now a function that runs at boot, after we know who is signed in. Settings live under users/{uid}/settings/app.
 function loadSettings() {
-  if (fs && uid) {
+  if (fs && uid && wid) {
     fs.doc(settingsPath()).onSnapshot(snap => {
       const d = snap.exists ? snap.data() : {};
       TRADES = Array.isArray(d.trades) && d.trades.length ? d.trades : DEFAULT_TRADES.slice();
@@ -747,10 +706,12 @@ document.getElementById("backBtn").addEventListener("click", () => go(null));
 // (no folder) and the "New list here" link inside a folder. Creates a list with a random id and today's date, then opens it.
 function createJob(folderId) {
   if (fs && !uid) { location.href = "login.html"; return; } // ADDED: must be signed in to make a list
+  if (fs && !wid) { location.href = "signup.html"; return; } // ADDED: and must have a workspace
   const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
   const today = new Date(); const d = today.getFullYear() + "-" + String(today.getMonth() + 1).padStart(2, "0") + "-" + String(today.getDate()).padStart(2, "0");
   const meta = { 
-    ownerId: uid, // ADDED: marks the list as belonging to the signed-in user
+    ownerId: uid, // who created it
+    workspaceId: wid, // ADDED: which workspace it belongs to (everyone in the workspace can see it)
     date: d, 
     community: "", 
     address: "", 
@@ -1163,7 +1124,18 @@ function boot() {
 }
 // ADDED: wait until Firebase knows who is signed in (or that nobody is), then start the app
 if (authSvc) {
-  const stopAuthWait = authSvc.onAuthStateChanged(user => { stopAuthWait(); uid = user ? user.uid : null; boot(); });
+  const stopAuthWait = authSvc.onAuthStateChanged(async user => {
+    stopAuthWait();
+    uid = user ? user.uid : null;
+    if (uid) {
+      // CHANGED: find out which workspace this person belongs to (saved on their profile during sign-up)
+      try {
+        const snap = await fs.doc("users/" + uid + "/profile/info").get();
+        wid = (snap.exists && snap.data().workspaceId) || null;
+      } catch (e) { wid = null; }
+    }
+    boot();
+  });
 } else {
   boot();
 }

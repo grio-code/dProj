@@ -2,22 +2,83 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // ---------- helpers ----------
+    function signedIn() { return request.auth != null; }
+    function isMember(wid) {
+      return signedIn() && exists(/databases/$(database)/documents/workspaces/$(wid)/members/$(request.auth.uid));
+    }
+    function isOwner(wid) {
+      return signedIn() && get(/databases/$(database)/documents/workspaces/$(wid)).data.ownerId == request.auth.uid;
+    }
+    // Signed in with a verified email that has a pending invitation to this workspace
+    function isInvited(wid) {
+      return signedIn() && request.auth.token.email_verified == true
+        && exists(/databases/$(database)/documents/workspaces/$(wid)/invites/$(request.auth.token.email.lower()));
+    }
+    function validName(n) { return n is string && n.size() > 0 && n.size() <= 50; }
+
+    // ---------- workspaces ----------
+    match /workspaces/{wid} {
+      // Anyone can create their own workspace. Reading is one doc at a time (no listing everybody's workspaces).
+      allow create: if signedIn() && request.resource.data.ownerId == request.auth.uid && validName(request.resource.data.name);
+      allow get: if signedIn() && (resource.data.ownerId == request.auth.uid || isMember(wid) || isInvited(wid));
+      allow update: if signedIn() && resource.data.ownerId == request.auth.uid
+                    && request.resource.data.ownerId == resource.data.ownerId
+                    && validName(request.resource.data.name);
+
+      // The people in the workspace
+      match /members/{memberId} {
+        allow read: if isMember(wid);
+        // You can only add yourself: as owner of a workspace you created, or as a member if you were invited
+        allow create: if signedIn() && memberId == request.auth.uid
+                      && ((isOwner(wid) && request.resource.data.role == 'owner')
+                          || (isInvited(wid) && request.resource.data.role == 'member'));
+        // Edit your own profile, but never your own role
+        allow update: if signedIn() && memberId == request.auth.uid && request.resource.data.role == resource.data.role;
+        allow delete: if isOwner(wid) || (signedIn() && memberId == request.auth.uid);
+      }
+
+      // One doc per invited email (the doc id is the lowercase email)
+      match /invites/{inviteId} {
+        allow get: if isMember(wid) || (signedIn() && request.auth.token.email.lower() == inviteId);
+        allow list: if isMember(wid);
+        allow create: if isMember(wid) && inviteId == request.resource.data.email;
+        allow delete: if isMember(wid) || (signedIn() && request.auth.token.email.lower() == inviteId);
+      }
+
+      // Username claims so two people can't use the same username in one workspace
+      match /usernames/{uname} {
+        allow read: if isMember(wid) || isOwner(wid) || isInvited(wid);
+        allow create: if signedIn() && request.resource.data.uid == request.auth.uid
+                      && (isMember(wid) || isOwner(wid) || isInvited(wid));
+        allow delete: if signedIn() && resource.data.uid == request.auth.uid;
+      }
+
+      // Shared trades, levels and folders
+      match /settings/{docId} {
+        allow read, write: if isMember(wid);
+      }
+    }
+
+    // ---------- lists ----------
     match /jobs/{jobId} {
       // Anyone with the link can open one list (this is what shared links use)
       allow get: if true;
-      // Only the owner can list their lists, create them, or delete them
-      allow list: if request.auth != null && resource.data.ownerId == request.auth.uid;
-      allow create: if request.auth != null && request.resource.data.ownerId == request.auth.uid;
-      allow delete: if request.auth != null && resource.data.ownerId == request.auth.uid;
-      // Subs can check things off, but nobody can change who owns the list
-      allow update: if request.resource.data.ownerId == resource.data.ownerId;
+      // Only people in the list's workspace can browse, create or delete lists
+      allow list: if isMember(resource.data.workspaceId);
+      allow create: if signedIn() && request.resource.data.ownerId == request.auth.uid
+                    && isMember(request.resource.data.workspaceId);
+      allow delete: if isMember(resource.data.workspaceId);
+      // Subs can check things off, but nobody can change who owns the list or which workspace it is in
+      allow update: if request.resource.data.ownerId == resource.data.ownerId
+                    && request.resource.data.workspaceId == resource.data.workspaceId;
 
       match /{coll}/{docId} {
         allow read, write: if coll in ['items', 'custom', 'rooms', 'hidden'];
       }
     }
 
-    // Each user's own profile and settings
+    // ---------- each person's own profile ----------
     match /users/{uid}/{document=**} {
       allow read, write: if request.auth != null && request.auth.uid == uid;
     }
