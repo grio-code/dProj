@@ -27,6 +27,15 @@
 <link href="nav-bar/nav.css" rel="stylesheet">
 <script src="nav-bar/nav.js" defer></script>
 <link href="all-lists/list.css" rel="stylesheet">
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="firebase-starter/firebase-config.js"></script>
+
+<script src="nav-bar/nav.js" defer></script>
+<script src="nav-bar/auth-ui.js" defer></script>
+
 </head>
 <body>
 <!-- Navigation -->
@@ -107,7 +116,7 @@
 </body>
 </html>
 
-<script>
+<!-- <script>
   // Keep the page content clear of the fixed top bar
 function setNavH() {
   const n = document.getElementById("fnav");
@@ -116,4 +125,4 @@ function setNavH() {
 setNavH();
 window.addEventListener("resize", setNavH);
 window.addEventListener("load", setNavH);
-</script>
+</script> -->

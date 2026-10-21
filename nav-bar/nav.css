@@ -366,6 +366,42 @@
   stroke-linejoin: round; 
 }
  
+/* ---------- Signed-in state ---------- */
+/* The dock stays hidden, and the Login/Sign up area stays invisible, until Firebase says who's here.
+   This avoids a flash of the wrong state on page load. */
+.dock { display: none; }
+html.signed-in .dock { display: block; }
+
+.fnav-actions { visibility: hidden; }
+html.auth-ready .fnav-actions { visibility: visible; }
+
+html.signed-in .fnav-guest { display: none; }
+.fnav-out { display: none; }
+html.signed-in .fnav-out { display: inline-flex; }
+
+/* "Integrate" with the greeting underneath */
+.fnav-left { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-width: 0; }
+.fnav-hello {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  max-width: 220px;
+  font: 500 12px var(--f-mono);
+  color: var(--muted);
+}
+html.signed-in .fnav-hello { display: flex; }
+.fnav-hello img,
+.fnav-av {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+}
+.fnav-hello img { object-fit: contain; background: var(--bg); border: 1px solid var(--rule); }
+.fnav-av { display: grid; place-items: center; background: var(--accent); color: var(--accent-ink); font-weight: 600; font-size: 11px; }
+.fnav-hello-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+
 /* ---------- Responsiveness ---------- */
 @media (max-width: 760px) {
   .fnav-links { 
