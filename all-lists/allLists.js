@@ -233,6 +233,8 @@ function saveItem(id) {
   }); 
 }
 let metaQ, sumQ; // timers used to debounce saves
+// ADDED: job fields typed since the last save. The live listener must not overwrite these with older data from the database.
+let dirtyMeta = {};
 // Save the job details (date, community, address, lot). Debounced: waits 600ms after the last keystroke so it doesn't save on every letter.
 function saveMeta() {
   clearTimeout(metaQ);
@@ -243,9 +245,10 @@ function saveMeta() {
       flag("Saved on this phone"); 
       return; 
     }
-    fs.doc("jobs/" + jobId).set(data, { 
-      merge: true }).then(() => flag("Saved"), 
-      () => flag("Couldn't save. Check your connection."));
+    fs.doc("jobs/" + jobId).set(data, { merge: true }).then(() => {
+      flag("Saved");
+      Object.keys(data).forEach(k => { if ((state.meta[k] || "") === data[k]) delete dirtyMeta[k]; }); // only forget fields that have not changed again
+    }, () => flag("Couldn't save. Check your connection."));
   }, 600);
 }
 // Open/total counts on the job record so the jobs list can show them.
@@ -517,7 +520,7 @@ function showJobs() {
 }
 // Open one punch list by id
 function showJob(id) {
-  stopListening(); jobId = id;
+  stopListening(); jobId = id; dirtyMeta = {};
   // Firestore mode starts empty and fills in as data arrives; local mode loads from localStorage
   state = fs ? blank() : Object.assign(blank(), local.jobs[id] || { 
     meta: { 
@@ -548,8 +551,9 @@ function showJob(id) {
   });
   // Also listen to the job's own record (date, community, address, lot)
   unsubs.push(fs.doc("jobs/" + id).onSnapshot(snap => { 
-    state.meta = snap.exists ? Object.assign({}, 
-    snap.data()) : {}; 
+    const next = snap.exists ? Object.assign({}, snap.data()) : {};
+    Object.keys(dirtyMeta).forEach(k => { if (k in state.meta) next[k] = state.meta[k]; }); // ADDED: keep what is still being typed
+    state.meta = next; 
     render(); }, 
     () => {}));
 }
@@ -671,6 +675,7 @@ document.querySelectorAll("[data-meta]").forEach(el => el.addEventListener("inpu
   state.meta = Object.assign({}, 
   state.meta, 
   { [el.dataset.meta]: el.value }); 
+  dirtyMeta[el.dataset.meta] = true; // ADDED 
   updateTitle(); 
   saveMeta(); 
 }));
@@ -711,7 +716,10 @@ function createJob(folderId) {
     createdAt: new Date().toISOString() 
   }; // ADDED: folderId
   if (fs) { 
-    fs.doc("jobs/" + id).set(meta).catch(() => toast("Couldn't create the list. Check your connection.")); 
+    fs.doc("jobs/" + id).set(meta).catch(e => {
+      console.error("Create list failed:", e);
+      toast(e && e.code === "permission-denied" ? "Couldn't create the list: permission denied. Publish the new Firestore rules." : "Couldn't create the list. Check your connection.");
+    }); 
   }
   else { 
     local.jobs[id] = Object.assign(blank(), { meta }); lsSave(); 
