@@ -63,6 +63,8 @@
       'auth/quota-exceeded': 'Too many emails sent today. Try again tomorrow.',
       'auth/network-request-failed': 'Network problem. Check your connection and try again.',
       'auth/operation-not-allowed': 'Email-link sign-in isn\u2019t turned on yet. In the Firebase console, open Authentication > Sign-in method > Email/Password and enable "Email link".',
+      'auth/invalid-continue-uri': 'The return link for the email isn\u2019t a valid web address. Open this page through a web server (like VS Code Live Server or your GitHub Pages site), not by double-clicking the file.',
+      'auth/missing-continue-uri': 'The return link for the email is missing. Open this page through a web server, not by double-clicking the file.',
       'auth/unauthorized-continue-uri': 'This website isn\u2019t on the authorized domains list yet. Add it in Firebase console > Authentication > Settings > Authorized domains.',
       'auth/invalid-action-code': 'That link has expired or was already used. Enter your email to get a new one.',
       'auth/expired-action-code': 'That link has expired. Enter your email to get a new one.',
@@ -106,6 +108,7 @@
   async function sendLink(email) {
     const url = PAGE_URL + (invitedWid ? '?w=' + encodeURIComponent(invitedWid) : '');
     await auth.sendSignInLinkToEmail(email, { url, handleCodeInApp: true });
+    console.log('Firebase accepted the request and sent a sign-in email to', email, 'with return link', url);
     store.set('emailForSignIn', email);
   }
   $('emailForm').addEventListener('submit', async e => {
@@ -114,6 +117,7 @@
     const email = $('wEmail').value.trim().toLowerCase();
     if (!EMAIL_RE.test(email)) return setErr('wEmailErr', 'Enter a valid email, like you@company.com.');
     setErr('wEmailErr', '');
+    if (location.protocol === 'file:') return showMsg(friendly('auth/invalid-continue-uri'));
     try {
       await busy($('emailBtn'), 'Sending\u2026', () => sendLink(email));
       $('verifyEmail').textContent = email;
