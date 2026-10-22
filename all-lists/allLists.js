@@ -370,12 +370,14 @@ const tradeOpts = sel => (sel && !TRADES.includes(sel) ? TRADES.concat(sel) : TR
 t === sel ? " selected" : ""
 }>${esc(t)}</option>`).join("");
 
-// ADDED: sets the big heading on the job screen to "Community - Lot" (e.g. "Oakwood - 12").
-// If only one of the two is filled in, it shows just that one. If both are empty, it falls back to "Punch List".
-// To show "Lot 12" instead of just "12", change state.meta.lot below to ("Lot " + state.meta.lot).
+// ADDED: sets the big heading on the job screen to "Community - Lot - Description" (e.g. "Oakwood - 12 - Final walk").
+// Any of the three that are empty are skipped. If all are empty, it falls back to "New List".
+// To show "Lot 12" instead of just "12", change m.lot below to (m.lot && "Lot " + m.lot).
+// CHANGED: description added. Line breaks in the description are turned into spaces so the heading stays on one line.
 function updateTitle() {
   const m = state.meta;
-  document.getElementById("jobTitle").textContent = [m.community, m.lot].filter(Boolean).join(" - ") || "New List";
+  const desc = (m.description || "").replace(/\s+/g, " ").trim();
+  document.getElementById("jobTitle").textContent = [m.community, m.lot, desc].filter(Boolean).join(" - ") || "New List";
 }
 
 // Redraws the whole punch list screen from the current state. Called after almost every change.
@@ -493,6 +495,7 @@ function listText() {
 function jobRow(id, j) {
   const title = [j.lot && "Lot " + j.lot, j.community].filter(Boolean).join(" · ") || "Untitled punch list";
   const sub = [j.address, j.date && fmtDay(j.date)].filter(Boolean).join(" · ");
+  
   const pill = typeof j.openCount === "number" && j.totalCount ? (j.openCount ? `<span class="pill">${j.openCount} open</span>` : `<span class="pill clear">Clear</span>`) : `<span class="pill none">No items</span>`;
   return `<li><a href="?job=${encodeURIComponent(id)}" data-job="${esc(id)}" draggable="false"><span class="j-main"><span class="j-title">${esc(title)}</span>${sub ? `<span class="j-sub">${esc(sub)}</span>` : ""}</span>${pill}</a></li>`;
 }
