@@ -97,14 +97,30 @@ service cloud.firestore {
                     && (canEditWs(resource.data.workspaceId)
                         || onlyChanges(['openCount', 'totalCount', 'updatedAt']));
 
-      // Item status (done, note, trade). Checking off only changes done / doneAt / updatedAt.
+      // Item status (done, note, trade). Checking off only changes done / doneAt / signedBy / signature / updatedAt.
+      // CHANGED: marking an item done now requires a signature (the signer's typed name + a drawn signature image).
       match /items/{itemId} {
         allow read: if true;
-        allow write: if canEditWs(jobWs(jobId));
-        allow create: if request.resource.data.keys().hasOnly(['done', 'doneAt', 'note', 'trade', 'updatedAt'])
-                      && request.resource.data.get('note', '') == ''
-                      && request.resource.data.get('trade', '') == '';
-        allow update: if onlyChanges(['done', 'doneAt', 'updatedAt']);
+        allow delete: if canEditWs(jobWs(jobId));
+        allow create: if (!newlyDone() || hasSig(request.resource.data))
+                      && (canEditWs(jobWs(jobId))
+                          || (request.resource.data.keys().hasOnly(['done', 'doneAt', 'signedBy', 'signature', 'note', 'trade', 'updatedAt'])
+                              && request.resource.data.get('note', '') == ''
+                              && request.resource.data.get('trade', '') == ''));
+        allow update: if (!newlyDone() || hasSig(request.resource.data))
+                      && (canEditWs(jobWs(jobId))
+                          || onlyChanges(['done', 'doneAt', 'signedBy', 'signature', 'updatedAt']));
+      }
+      // ADDED: true when this write switches the item from not done to done
+      function newlyDone() {
+        return request.resource.data.get('done', false) == true
+          && (resource == null || resource.data.get('done', false) != true);
+      }
+      // ADDED: a name (1-60 characters) and a PNG signature image under about 100 KB
+      function hasSig(d) {
+        return d.get('signedBy', '') is string && d.get('signedBy', '').size() > 0 && d.get('signedBy', '').size() <= 60
+          && d.get('signature', '') is string && d.get('signature', '').size() < 100000
+          && d.get('signature', '').matches('data:image/png;base64,[A-Za-z0-9+/=]+');
       }
       // The items themselves, rooms, and hidden rooms: editors only
       match /{coll}/{docId} {

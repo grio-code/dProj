@@ -212,6 +212,19 @@
     </div>
   </div>
 </div>
+<!-- ADDED: signature box. Opens when someone checks an item off; the item is only marked done after they type their name and sign. -->
+<div class="sig-back" id="sigBack" hidden>
+  <div class="sig-box" role="dialog" aria-modal="true" aria-labelledby="sigTitle">
+    <h2 id="sigTitle">Sign to mark done</h2>
+    <p class="sig-item" id="sigItem"></p>
+    <label for="sigName">Your name</label>
+    <input id="sigName" type="text" maxlength="60" autocomplete="name" placeholder="First and last name">
+    <div class="sig-label"><span>Signature</span><button type="button" class="link" id="sigClear">Clear</button></div>
+    <canvas id="sigPad" aria-label="Sign here with your finger or mouse"></canvas>
+    <p class="sig-err" id="sigErr" hidden></p>
+    <div class="acts"><button type="button" class="btn" id="sigCancel">Cancel</button><button type="button" class="btn primary" id="sigOk">Sign &amp; mark done</button></div>
+  </div>
+</div>
 <!-- Small popup message, shown briefly by toast() -->
 <div class="toast" id="toast" hidden></div>
 </body>

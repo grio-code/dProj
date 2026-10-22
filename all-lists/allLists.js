@@ -294,8 +294,10 @@ async function put(coll, id, data) {
 function saveItem(id) { 
   const r = rec(id); 
   put("items", id, { 
-    done: !!r.done, doneAt: r.doneAt || null, note: r.note || "", trade: r.trade || "", updatedAt: new Date().toISOString() 
-  }); 
+    done: !!r.done, doneAt: r.doneAt || null,
+    signedBy: r.signedBy || "", signature: r.signature || "", // ADDED: who signed it off, and their drawn signature (a small PNG)
+    note: r.note || "", trade: r.trade || "", updatedAt: new Date().toISOString()
+  });
 }
 let metaQ, sumQ; // timers used to debounce saves
 // ADDED: job fields typed since the last save. The live listener must not overwrite these with older data from the database.
@@ -403,7 +405,7 @@ function render() {
         <input type="checkbox" id="cb-${it.id}" ${r.done ? "checked" : ""} aria-label="${esc(it.text)}">
         <div class="it-main"><label for="cb-${it.id}"><span class="txt">${esc(it.text)}</span></label>
           ${r.note && !ed ? `<div class="note">${esc(r.note)}</div>` : ""}
-          <div class="meta"><span class="trade">${esc(it.trade)}</span>${r.done ? `<span class="badge-done">✓ Done${r.doneAt ? " " + fmtDateTime(r.doneAt) : ""}</span>` : ""}
+          <div class="meta"><span class="trade">${esc(it.trade)}</span>${r.done ? `<span class="badge-done">✓ Done${r.doneAt ? " " + fmtDateTime(r.doneAt) : ""}</span>` : ""}${r.done && r.signedBy ? `<span class="signed">Signed by ${esc(r.signedBy)}${r.signature ? `<img src="${esc(r.signature)}" alt="Signature of ${esc(r.signedBy)}">` : ""}</span>` : ""}
             ${ed || !canEdit ? "" : `<button type="button" class="link" data-edit="${it.id}">Edit</button>`}
             ${ed || !canEdit ? "" : `<button type="button" class="link muted" data-delitem="${it.id}">Remove</button>`}</div></div>
         ${ed && canEdit ? `<div class="edit"><input type="text" id="text-${it.id}" maxlength="160" value="${esc(it.text)}" aria-label="Item text"><textarea id="note-${it.id}" placeholder="What's wrong, where exactly, who's fixing it…" aria-label="Note">${esc(r.note || "")}</textarea>
@@ -1100,15 +1102,85 @@ document.getElementById("delJob").addEventListener("click", async () => {
   } else { delete local.jobs[id]; lsSave(); }
   toast("Punch list deleted"); go(null);
 });
-// Checking/unchecking an item: record done + timestamp, redraw right away, then save
+// Checking/unchecking an item.
+// CHANGED: checking an item no longer marks it done straight away. The box is unticked again and the signature box opens;
+// the item is only marked done once the person types their name and signs (see SIGNATURE TO MARK DONE below).
+// Unchecking still works right away and clears the signature.
 document.addEventListener("change", e => {
   const cb = e.target.closest(".item input[type=checkbox]");
   if (!cb) return;
   const id = cb.closest(".item").dataset.id;
-  state.items[id] = Object.assign({}, rec(id), { 
-    done: cb.checked, 
-    doneAt: cb.checked ? new Date().toISOString() : null });
+  if (cb.checked) { cb.checked = false; openSig(id); return; }
+  state.items[id] = Object.assign({}, rec(id), { done: false, doneAt: null, signedBy: "", signature: "" });
   render(); saveItem(id);
+});
+
+// ================= ADDED: SIGNATURE TO MARK DONE =================
+// The signature box asks for a typed name and a drawn signature. The name is filled in from the signed-in person's
+// profile (or the last name typed on this phone). The drawing is saved as a small PNG with the item.
+const sig = { id: null, drawn: false, drawing: false, last: null };
+const sigBack = document.getElementById("sigBack"), pad = document.getElementById("sigPad"), sigName = document.getElementById("sigName"), sigErr = document.getElementById("sigErr");
+let myName = ""; // the signed-in person's name from their profile, filled in during startup
+function lastSigner() { try { return localStorage.getItem(LS + "-signer") || ""; } catch (e) { return ""; } }
+function openSig(id) {
+  sig.id = id; sig.drawn = false;
+  const c = state.custom[id];
+  document.getElementById("sigItem").textContent = c ? c.text : "";
+  sigName.value = myName || lastSigner();
+  sigErr.hidden = true;
+  sigBack.hidden = false;
+  sizePad();
+  (sigName.value ? pad : sigName).focus();
+}
+function closeSig() {
+  sigBack.hidden = true; sig.id = null;
+  const cb = document.activeElement; if (cb && cb.blur) cb.blur();
+}
+// Match the canvas's pixels to its size on screen (sharper on phones) and wipe it
+function sizePad() {
+  const r = pad.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
+  pad.width = Math.round(r.width * dpr); pad.height = Math.round(r.height * dpr);
+  const ctx = pad.getContext("2d");
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.lineWidth = 2.5; ctx.lineCap = "round"; ctx.lineJoin = "round"; ctx.strokeStyle = "#1d2422";
+  sig.drawn = false;
+}
+const padPt = e => { const r = pad.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; };
+pad.addEventListener("pointerdown", e => {
+  e.preventDefault(); pad.setPointerCapture(e.pointerId);
+  sig.drawing = true; sig.last = padPt(e);
+  const ctx = pad.getContext("2d"); ctx.beginPath(); ctx.arc(sig.last.x, sig.last.y, 1.2, 0, Math.PI * 2); ctx.fillStyle = "#1d2422"; ctx.fill(); // a tap leaves a dot
+  sig.drawn = true; sigErr.hidden = true;
+});
+pad.addEventListener("pointermove", e => {
+  if (!sig.drawing) return;
+  const p = padPt(e), ctx = pad.getContext("2d");
+  ctx.beginPath(); ctx.moveTo(sig.last.x, sig.last.y); ctx.lineTo(p.x, p.y); ctx.stroke();
+  sig.last = p;
+});
+["pointerup", "pointercancel", "pointerleave"].forEach(t => pad.addEventListener(t, () => { sig.drawing = false; }));
+// Shrink the signature to at most 400px wide before saving, so each one stays small (usually under 15 KB)
+function sigImage() {
+  const w = Math.min(400, pad.width), h = Math.round(pad.height * w / pad.width);
+  const out = document.createElement("canvas"); out.width = w; out.height = h;
+  out.getContext("2d").drawImage(pad, 0, 0, w, h);
+  return out.toDataURL("image/png");
+}
+document.getElementById("sigClear").addEventListener("click", sizePad);
+document.getElementById("sigCancel").addEventListener("click", closeSig);
+sigBack.addEventListener("click", e => { if (e.target === sigBack) closeSig(); }); // tap outside the box to cancel
+document.addEventListener("keydown", e => { if (e.key === "Escape" && !sigBack.hidden) closeSig(); });
+window.addEventListener("resize", () => { if (!sigBack.hidden && !sig.drawn) sizePad(); });
+document.getElementById("sigOk").addEventListener("click", () => {
+  const name = sigName.value.replace(/\s+/g, " ").trim();
+  const err = !name ? "Type your name." : !sig.drawn ? "Sign in the box." : "";
+  if (err) { sigErr.textContent = err; sigErr.hidden = false; (name ? pad : sigName).focus(); return; }
+  const signature = sigImage();
+  if (signature.length >= 100000) { sigErr.textContent = "That signature is too detailed. Tap Clear and sign again."; sigErr.hidden = false; return; }
+  try { localStorage.setItem(LS + "-signer", name); } catch (e) {}
+  const id = sig.id;
+  state.items[id] = Object.assign({}, rec(id), { done: true, doneAt: new Date().toISOString(), signedBy: name, signature });
+  closeSig(); render(); saveItem(id);
 });
 // One click handler for every button inside the rooms area. Each button carries a data- attribute that says what it does (event delegation, because the buttons are re-created on every render).
 document.addEventListener("click", e => {
@@ -1239,6 +1311,7 @@ if (authSvc) {
       try {
         const snap = await fs.doc("users/" + uid + "/profile/info").get();
         wid = (snap.exists && snap.data().workspaceId) || null;
+        myName = (snap.exists && snap.data().name) || ""; // ADDED: pre-fills the name in the signature box
       } catch (e) { wid = null; }
       if (wid) await watchPerms(); // ADDED
     }
