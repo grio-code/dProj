@@ -493,9 +493,10 @@ function listText() {
 // CHANGED: split into two functions. jobRow() builds the HTML for ONE list (this is the old per-list code, unchanged),
 // and renderJobs() now arranges the folders and the lists around them.
 function jobRow(id, j) {
-  const title = [j.lot && "Lot " + j.lot, j.community].filter(Boolean).join(" · ") || "Untitled punch list";
+  // CHANGED: description added after Lot and Community (line breaks turned into spaces), e.g. "Lot 12 · Oakwood · Final walk"
+  const desc = (j.description || "").replace(/\s+/g, " ").trim();
+  const title = [j.lot && "Lot " + j.lot, j.community, desc].filter(Boolean).join(" · ") || "Untitled punch list";
   const sub = [j.address, j.date && fmtDay(j.date)].filter(Boolean).join(" · ");
-  
   const pill = typeof j.openCount === "number" && j.totalCount ? (j.openCount ? `<span class="pill">${j.openCount} open</span>` : `<span class="pill clear">Clear</span>`) : `<span class="pill none">No items</span>`;
   return `<li><a href="?job=${encodeURIComponent(id)}" data-job="${esc(id)}" draggable="false"><span class="j-main"><span class="j-title">${esc(title)}</span>${sub ? `<span class="j-sub">${esc(sub)}</span>` : ""}</span>${pill}</a></li>`;
 }
