@@ -130,9 +130,10 @@
     $('uName').value = name;
     $('uUser').value = st.profile.username ? '@' + st.profile.username : '';
     $('uEmail').value = st.user.email || '';
-    $('uRole').textContent = st.isOwner ? 'Owner' : 'Member';
-    $('uRole').className = 'role' + (st.isOwner ? ' role--owner' : '');
-    $('uJoined').textContent = me.joinedAt ? 'Joined ' + fmtDate(me.joinedAt) : '';
+    $('uRole').textContent = st.isOwner ? 'Owner' : me.canEdit ? 'Editor' : 'Member';
+    $('uRole').className = 'role' + (st.isOwner ? ' role--owner' : me.canEdit ? ' role--editor' : '');
+    $('uJoined').textContent = (me.joinedAt ? 'Joined ' + fmtDate(me.joinedAt) + '. ' : '')
+      + (st.isOwner || me.canEdit ? 'You can edit lists.' : 'You can check items off. Ask the owner if you need to edit lists.');
     const photo = pending.userPhoto !== undefined ? pending.userPhoto : (st.profile.logo || '');
     setPic($('uPic'), photo, name || st.user.email);
     $('uPhotoRemove').hidden = !photo;
@@ -162,7 +163,15 @@
       if (m.id === st.user.uid) b.appendChild(el('span', 'you', ' (you)')).style.display = 'inline';
       who.appendChild(b);
       who.appendChild(el('span', null, [m.username ? '@' + m.username : '', m.email].filter(Boolean).join(' · ')));
-      li.append(pic, who, el('span', 'role' + (m.role === 'owner' ? ' role--owner' : ''), m.role === 'owner' ? 'Owner' : 'Member'));
+      const isOwnerRow = m.role === 'owner' || m.id === st.ws.ownerId;
+      li.append(pic, who);
+      if (st.isOwner && !isOwnerRow) {
+        // ADDED: the owner decides who can edit lists. Everyone else can only check items off.
+        li.appendChild(editToggle(m));
+      } else {
+        li.appendChild(el('span', 'role' + (isOwnerRow ? ' role--owner' : m.canEdit ? ' role--editor' : ''),
+          isOwnerRow ? 'Owner' : m.canEdit ? 'Editor' : 'Member'));
+      }
       if (st.isOwner && m.id !== st.user.uid) {
         const rm = el('button', 'btn btn--sm btn--danger', 'Remove');
         rm.type = 'button';
@@ -193,6 +202,30 @@
       }
       inv.appendChild(li);
     });
+  }
+
+  // ADDED: "Can edit lists" switch on a member's row (owner only)
+  function editToggle(m) {
+    const lab = el('label', 'st-switch');
+    lab.title = 'Editors can add, change and remove rooms, items and lists. Others can only check items off.';
+    const cb = el('input');
+    cb.type = 'checkbox';
+    cb.checked = m.canEdit === true;
+    cb.setAttribute('aria-label', 'Let ' + (m.displayName || m.email) + ' edit lists');
+    cb.addEventListener('change', async () => {
+      const on = cb.checked;
+      cb.disabled = true;
+      try {
+        await db.doc('workspaces/' + st.wid + '/members/' + m.id).update({ canEdit: on });
+        m.canEdit = on;
+        showMsg((m.displayName || m.email) + (on ? ' can now edit lists.' : ' can now only check items off.'));
+      } catch (ex) {
+        cb.checked = !on;
+        showMsg(friendly(ex, 'Could not change that. Try again.'), true);
+      } finally { cb.disabled = false; }
+    });
+    lab.append(cb, el('span', 'st-switch-ui'), el('span', 'st-switch-text', 'Can edit lists'));
+    return lab;
   }
 
   function renderAdmin() {

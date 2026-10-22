@@ -220,6 +220,18 @@ a.btn { text-decoration: none; }
 }
 .st-menu-item:hover { background: var(--chip); color: var(--chip-ink); }
 
+/* ADDED: Editor badge and the owner's "Can edit lists" switch */
+.role--editor { background: var(--done); color: var(--sheet); }
+.st-switch { position: relative; display: inline-flex; align-items: center; gap: 8px; flex: none; cursor: pointer; font-size: 13px; color: var(--muted); white-space: nowrap; }
+.st-switch input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.st-switch-ui { position: relative; width: 36px; height: 20px; border-radius: 999px; background: var(--rule); transition: background .2s; }
+.st-switch-ui::after { content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: var(--sheet); box-shadow: 0 1px 2px rgba(0,0,0,.3); transition: transform .2s; }
+.st-switch input:checked + .st-switch-ui { background: var(--done); }
+.st-switch input:checked + .st-switch-ui::after { transform: translateX(16px); }
+.st-switch input:checked ~ .st-switch-text { color: var(--ink); }
+.st-switch input:focus-visible + .st-switch-ui { outline: 2px solid var(--focus); outline-offset: 2px; }
+.st-switch input:disabled + .st-switch-ui { opacity: .5; }
+
 /* ---------- Phones ---------- */
 @media (max-width: 760px) {
   .st-layout { grid-template-columns: minmax(0, 1fr); gap: 16px; }

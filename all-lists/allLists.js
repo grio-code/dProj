@@ -105,6 +105,24 @@ if (window.firebase && cfg.apiKey && !/PASTE/.test(cfg.apiKey)) {
 const authSvc = (fs && firebase.auth) ? firebase.auth() : null;
 let uid = null;
 let wid = null; // ADDED: the signed-in user's workspace. Lists, trades, levels and folders are shared by everyone in it.
+// ADDED: editing permission. Only the workspace owner, and members the owner has given "Can edit lists" in Settings,
+// can change a list (add/edit/remove rooms and items, job details, folders, trades, delete lists).
+// Everyone else, including people who open a shared link, can only check items off. The Firestore rules enforce the same thing.
+// Local-only mode (no Firebase) has nobody to ask, so everything is editable there.
+let canEdit = !fs;
+// Call before any editing action: returns true if allowed, otherwise shows a message and returns false
+function needEdit() {
+  if (canEdit) return true;
+  toast("You can check items off, but only editors can change this list.");
+  return false;
+}
+// Show or hide everything that edits, based on canEdit
+function applyPerms() {
+  document.documentElement.classList.toggle("can-edit", canEdit);
+  document.querySelectorAll("#jobinfo input, #jobinfo textarea, #jobinfo select").forEach(el => { el.disabled = !canEdit; });
+  const vo = document.getElementById("viewOnly");
+  if (vo) vo.hidden = canEdit;
+}
 const settingsPath = () => "workspaces/" + wid + "/settings/app"; // CHANGED: shared by the whole workspace
 // Local-only mode stores everything in the browser's localStorage under this key
 const LS = "punch-app-v1";
@@ -281,6 +299,7 @@ let metaQ, sumQ; // timers used to debounce saves
 let dirtyMeta = {};
 // Save the job details (date, community, address, lot). Debounced: waits 600ms after the last keystroke so it doesn't save on every letter.
 function saveMeta() {
+  if (!canEdit) return; // ADDED
   clearTimeout(metaQ);
   metaQ = setTimeout(() => {
     const m = state.meta, data = { date: m.date || "", community: m.community || "", address: m.address || "", lot: m.lot || "", description: m.description || "" }; // CHANGED: description added
@@ -380,9 +399,9 @@ function render() {
         <div class="it-main"><label for="cb-${it.id}"><span class="txt">${esc(it.text)}</span></label>
           ${r.note && !ed ? `<div class="note">${esc(r.note)}</div>` : ""}
           <div class="meta"><span class="trade">${esc(it.trade)}</span>${r.done ? `<span class="badge-done">✓ Done${r.doneAt ? " " + fmtDateTime(r.doneAt) : ""}</span>` : ""}
-            ${ed ? "" : `<button type="button" class="link" data-edit="${it.id}">Edit</button>`}
-            ${ed ? "" : `<button type="button" class="link muted" data-delitem="${it.id}">Remove</button>`}</div></div>
-        ${ed ? `<div class="edit"><input type="text" id="text-${it.id}" maxlength="160" value="${esc(it.text)}" aria-label="Item text"><textarea id="note-${it.id}" placeholder="What's wrong, where exactly, who's fixing it…" aria-label="Note">${esc(r.note || "")}</textarea>
+            ${ed || !canEdit ? "" : `<button type="button" class="link" data-edit="${it.id}">Edit</button>`}
+            ${ed || !canEdit ? "" : `<button type="button" class="link muted" data-delitem="${it.id}">Remove</button>`}</div></div>
+        ${ed && canEdit ? `<div class="edit"><input type="text" id="text-${it.id}" maxlength="160" value="${esc(it.text)}" aria-label="Item text"><textarea id="note-${it.id}" placeholder="What's wrong, where exactly, who's fixing it…" aria-label="Note">${esc(r.note || "")}</textarea>
           <select id="trade-${it.id}" aria-label="Trade">${tradeOpts(it.trade)}</select>
           <div class="acts"><button type="button" class="btn" data-cancel>Cancel</button><button type="button" class="btn primary" data-saveedit="${it.id}">Save</button></div></div>` : ""}
       </li>`;
@@ -396,15 +415,15 @@ function render() {
         <svg class="chev" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 6l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2"/></svg>
       </button>
       ${isOpen ? `<div class="room-body">
-        ${ui.editRoom === room.id ? `<div class="edit" style="padding:12px 14px"><input type="text" id="rname-${room.id}" maxlength="40" value="${esc(room.name)}" aria-label="Room name"><select id="rfloor-${room.id}" aria-label="Floor">${FLOORS.map(f => `<option${f === room.floor ? " selected" : ""}>${f}</option>`).join("")}</select><div class="acts"><button type="button" class="btn" data-cancel>Cancel</button><button type="button" class="btn primary" data-saveroom="${room.id}">Save</button></div></div>` : ""}
+        ${ui.editRoom === room.id && canEdit ? `<div class="edit" style="padding:12px 14px"><input type="text" id="rname-${room.id}" maxlength="40" value="${esc(room.name)}" aria-label="Room name"><select id="rfloor-${room.id}" aria-label="Floor">${FLOORS.map(f => `<option${f === room.floor ? " selected" : ""}>${f}</option>`).join("")}</select><div class="acts"><button type="button" class="btn" data-cancel>Cancel</button><button type="button" class="btn primary" data-saveroom="${room.id}">Save</button></div></div>` : ""}
         <ul>${lis}</ul>
-        ${!vis.length ? `<div class="empty">${!tradeAll.length ? "No items yet. Add the first one below." : ui.show === "open" ? "Nothing open in this room." : "Nothing completed here yet."}</div>` : ""}
-        <form class="add" data-add="${room.id}">
+        ${!vis.length ? `<div class="empty">${!tradeAll.length ? (canEdit ? "No items yet. Add the first one below." : "No items yet.") : ui.show === "open" ? "Nothing open in this room." : "Nothing completed here yet."}</div>` : ""}
+        ${canEdit ? `<form class="add" data-add="${room.id}">
           <input id="add-${room.id}" type="text" maxlength="160" placeholder="New Item" aria-label="New punch item for ${esc(room.name)}">
           <select id="addtrade-${room.id}" aria-label="Trade">${tradeOpts(ui.trade || "General")}</select>
           <button class="btn primary" type="submit">Add</button>
-        </form>
-        ${conf ? `<div class="confirm">Remove ${esc(room.name)} and its punch items from this list?
+        </form>` : ""}
+        ${!canEdit ? "" : conf ? `<div class="confirm">Remove ${esc(room.name)} and its punch items from this list?
             <div class="acts"><button type="button" class="btn" data-cancel>Keep it</button><button type="button" class="btn danger" data-delroom="${room.id}">Remove room</button></div></div>`
           : `<div class="room-foot" style="gap:16px"><button type="button" class="link" data-editroom="${room.id}">Rename room</button><button type="button" class="link muted" data-askroom="${room.id}">Remove room</button></div>`}
       </div>` : ""}
@@ -431,7 +450,7 @@ function render() {
   document.querySelectorAll("#rooms input[type=text], #rooms textarea, #rooms select").forEach(el => keep[el.id] = el.value);
   // CHANGED: with no default rooms, a brand new list has nothing to draw. The old message would have read "No rooms have  items." (blank trade),
   // so now it shows "No rooms yet. Add your first room above." when no trade filter is active, and keeps the trade message when one is.
-  document.getElementById("rooms").innerHTML = html || `<div class="empty">${ui.trade ? "No rooms have " + esc(ui.trade) + " items." : "No rooms yet. Add your first room above."}</div>`;
+  document.getElementById("rooms").innerHTML = html || `<div class="empty">${ui.trade ? "No rooms have " + esc(ui.trade) + " items." : canEdit ? "No rooms yet. Add your first room above." : "No rooms yet."}</div>`;
   Object.entries(keep).forEach(([k, v]) => { const el = document.getElementById(k); if (el) el.value = v; });
   if (focusId) { const el = document.getElementById(focusId); if (el) el.focus({ preventScroll: true }); }
   // Fill the job detail inputs (skipping the one being typed in so it doesn't get overwritten)
@@ -499,7 +518,7 @@ function renderJobs() {
       ${isOpen ? `<div class="room-body">
         ${ui.renameFolder === fid ? `<div class="edit" style="padding:12px 14px"><input type="text" id="fname-${esc(fid)}" maxlength="40" value="${esc(fo.name)}" aria-label="Folder name"><div class="acts"><button type="button" class="btn" data-fcancel>Cancel</button><button type="button" class="btn primary" data-fsave="${esc(fid)}">Save</button></div></div>` : ""}
         <ul class="jobs" style="margin:0;padding:12px 14px">${n ? inside.map(([id, j]) => jobRow(id, j)).join("") : `<li class="empty" style="padding:0">No lists in this folder yet.</li>`}</ul>
-        ${ui.confirmFolder === fid ? `<div class="confirm">Delete the folder ${esc(fo.name)}? The lists inside are not deleted. They move back to the main list.
+        ${!canEdit ? "" : ui.confirmFolder === fid ? `<div class="confirm">Delete the folder ${esc(fo.name)}? The lists inside are not deleted. They move back to the main list.
             <div class="acts"><button type="button" class="btn" data-fcancel>Keep it</button><button type="button" class="btn danger" data-fdel="${esc(fid)}">Delete folder</button></div></div>`
           : `<div class="room-foot" style="gap:16px"><button type="button" class="link" data-fnew="${esc(fid)}">New list here</button><button type="button" class="link" data-frename="${esc(fid)}">Rename</button><button type="button" class="link muted" data-fask="${esc(fid)}">Delete folder</button></div>`}
       </div>` : ""}
@@ -509,8 +528,8 @@ function renderJobs() {
   const loose = rows.filter(([, j]) => !j.folderId || !foldersList[j.folderId]);
   if (sortedFolders().length && loose.length) html += `<li data-dropfolder=""><h2 class="floor">Not in a folder</h2></li>`;
   html += loose.map(([id, j]) => jobRow(id, j)).join("");
-  document.getElementById("jobs").innerHTML = html || `<li class="empty">No punch lists yet. Tap <b>New punch list</b> to start one.</li>`;
-  document.getElementById("dragHint").hidden = !(sortedFolders().length && rows.length); // ADDED: show the drag tip only when it's useful
+  document.getElementById("jobs").innerHTML = html || `<li class="empty">${canEdit ? "No punch lists yet. Tap <b>New list</b> to start one." : "No punch lists yet."}</li>`;
+  document.getElementById("dragHint").hidden = !(canEdit && sortedFolders().length && rows.length); // ADDED: show the drag tip only when it's useful
   // ADDED: put back anything that was being typed, and the focus
   Object.entries(keep).forEach(([k, v]) => { const el = document.getElementById(k); if (el) el.value = v; });
   if (focusId) { const el = document.getElementById(focusId); if (el) el.focus({ 
@@ -622,6 +641,7 @@ window.addEventListener("popstate", route);
 // Save the trades and levels lists (to Firestore if connected, otherwise localStorage)
 // CHANGED: now saves foldersList too (it lives in the same record as trades and levels)
 function saveSettings() {
+  if (!canEdit) return; // ADDED
   if (fs) {
     if (!uid || !wid) return; // guests opening a shared link have no settings to save
     fs.doc(settingsPath()).set({ trades: TRADES, floors: FLOORS, folders: foldersList })
@@ -686,7 +706,7 @@ function loadSettings() {
 // Click the × on a level tag to remove it (at least one must remain)
 document.getElementById("floorList").addEventListener("click", e => { 
   const b = e.target.closest("[data-delfloor]"); 
-  if (!b) return; 
+  if (!b || !needEdit()) return; 
   if (FLOORS.length < 2) { 
     toast("Keep at least one list"); 
     return; 
@@ -703,7 +723,7 @@ document.getElementById("tradesBtn").addEventListener("click", () => {
 // Click the × on a trade tag to remove it
 document.getElementById("tradeList").addEventListener("click", e => { 
   const b = e.target.closest("[data-deltrade]"); 
-  if (!b) return; 
+  if (!b || !needEdit()) return; 
   TRADES.splice(+b.dataset.deltrade, 
   1); saveSettings(); 
   applyTrades(); 
@@ -725,6 +745,7 @@ function growDesc() {
 }
 // Typing in any job detail field updates state, updates the heading right away (CHANGED: updateTitle() added), and triggers a debounced save
 document.querySelectorAll("[data-meta]").forEach(el => el.addEventListener("input", () => { 
+  if (!canEdit) return; // ADDED
   state.meta = Object.assign({}, 
   state.meta, 
   { [el.dataset.meta]: el.value }); 
@@ -735,6 +756,7 @@ document.querySelectorAll("[data-meta]").forEach(el => el.addEventListener("inpu
 }));
 // ADDED: choosing a folder in the dropdown moves this list into that folder (empty value = no folder)
 document.getElementById("jFolder").addEventListener("change", e => {
+  if (!needEdit()) return; // ADDED
   state.meta = Object.assign({}, state.meta, { 
     folderId: e.target.value 
   });
@@ -759,6 +781,7 @@ document.getElementById("backBtn").addEventListener("click", () => go(null));
 function createJob(folderId) {
   if (fs && !uid) { location.href = "login.html"; return; } // ADDED: must be signed in to make a list
   if (fs && !wid) { location.href = "signup.html"; return; } // ADDED: and must have a workspace
+  if (!canEdit) { toast("Only editors can create lists. Ask the workspace owner for editing access."); if (!jobId) showJobs(); return; } // ADDED
   const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
   const today = new Date(); const d = today.getFullYear() + "-" + String(today.getMonth() + 1).padStart(2, "0") + "-" + String(today.getDate()).padStart(2, "0");
   const meta = { 
@@ -790,6 +813,7 @@ function createJob(folderId) {
 document.getElementById("newJob").addEventListener("click", () => createJob(""));
 // ADDED: "New folder" button shows or hides the name form
 document.getElementById("newFolder").addEventListener("click", () => {
+  if (!needEdit()) return; // ADDED
   const f = document.getElementById("addFolderForm");
   f.hidden = !f.hidden;
   if (!f.hidden) document.getElementById("newFolderName").focus();
@@ -807,6 +831,7 @@ document.getElementById("jobs").addEventListener("click", e => {
   const b = e.target.closest("button"); 
   if (!b) return;
   const d = b.dataset;
+  if (!d.ftoggle && !needEdit()) return; // ADDED: everything except opening a folder edits something
   // Expand / collapse a folder
   if (d.ftoggle) { 
     ui.openFolders[d.ftoggle] = !ui.openFolders[d.ftoggle]; 
@@ -972,7 +997,7 @@ jobsEl.addEventListener("pointerdown", e => {
   if (e.pointerType === "mouse" && e.button !== 0) 
   return;
   const a = e.target.closest("a[data-job]");
-  if (!a || !sortedFolders().length) 
+  if (!a || !sortedFolders().length || !canEdit) // CHANGED: only editors can drag lists into folders
   return;
   Object.assign(drag, { 
     id: a.dataset.job, 
@@ -1050,12 +1075,14 @@ document.getElementById("linkBtn").addEventListener("click", () => {
 });
 // Delete-whole-list flow: ask, then confirm or cancel
 document.getElementById("askDelJob").addEventListener("click", () => { 
+  if (!needEdit()) return; // ADDED
   document.getElementById("confirmDelJob").hidden = false; 
 });
 document.getElementById("keepJob").addEventListener("click", () => { 
   document.getElementById("confirmDelJob").hidden = true; 
 });
 document.getElementById("delJob").addEventListener("click", async () => {
+  if (!needEdit()) return; // ADDED
   const id = jobId;
   if (fs) {
     try {
@@ -1083,6 +1110,8 @@ document.addEventListener("click", e => {
   const d = b.dataset;
   // Expand / collapse a room
   if (d.toggle) { ui.open[d.toggle] = !ui.open[d.toggle]; ui.confirm = null; uiSave(); render(); }
+  // ADDED: every other button in a room edits the list, so editors only
+  else if (!b.hasAttribute("data-cancel") && !needEdit()) return;
   // Start editing an item
   else if (d.edit) { ui.edit = d.edit; render(); document.getElementById("note-" + d.edit)?.focus(); }
   // Start renaming a room
@@ -1125,6 +1154,7 @@ document.addEventListener("click", e => {
 document.addEventListener("submit", e => {
   const f = e.target;
   e.preventDefault(); // stop the browser from reloading the page
+  if (!needEdit()) return; // ADDED: every form on this page adds something
   // Add a new room
   if (f.id === "addRoom") {
     const inp = document.getElementById("newRoom"), name = inp.value.trim();
@@ -1165,6 +1195,23 @@ document.addEventListener("submit", e => {
 // Hide the install tip if it was dismissed before, or if the app is already running from the home screen
 if (uiPrefs().tipHidden || navigator.standalone) document.getElementById("tip").hidden = true;
 ui.openFolders = uiPrefs().openFolders || {}; // ADDED: restore which folders were expanded last time
+// ADDED: owner of the workspace = editor. Other members are editors only if the owner turned on "Can edit lists" for them.
+// The member record is watched live, so a change in Settings takes effect without reloading.
+async function watchPerms() {
+  let ownerId = "";
+  try { const w = await fs.doc("workspaces/" + wid).get(); ownerId = w.exists ? w.data().ownerId : ""; } catch (e) {}
+  if (ownerId === uid) { canEdit = true; return; }
+  await new Promise(resolve => {
+    fs.doc("workspaces/" + wid + "/members/" + uid).onSnapshot(snap => {
+      const next = snap.exists && snap.data().canEdit === true;
+      const changed = next !== canEdit;
+      canEdit = next;
+      applyPerms();
+      if (changed) { ui.edit = null; ui.editRoom = null; ui.confirm = null; render(); renderJobs(); }
+      resolve();
+    }, () => resolve());
+  });
+}
 function boot() {
   loadSettings();
   // If we arrived from the dock's "New List" button, create a list right away and open it
@@ -1186,7 +1233,9 @@ if (authSvc) {
         const snap = await fs.doc("users/" + uid + "/profile/info").get();
         wid = (snap.exists && snap.data().workspaceId) || null;
       } catch (e) { wid = null; }
+      if (wid) await watchPerms(); // ADDED
     }
+    applyPerms(); // ADDED
     boot();
   });
 } else {

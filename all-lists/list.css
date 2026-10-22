@@ -752,3 +752,33 @@ ul.jobs a {
 .wrap {
     padding-top: calc(var(--nav-h, 72px) + env(safe-area-inset-top, 0px) + 16px);
   }
+
+/* ---------- ADDED: editing permission ----------
+   allLists.js puts "can-edit" on <html> for the workspace owner and members allowed to edit.
+   Everyone else sees the list read-only and can only check items off. */
+html:not(.can-edit) .edit-only { 
+  display: none !important; 
+}
+.jobinfo input:disabled, 
+.jobinfo textarea:disabled { 
+  opacity: 1; 
+  color: var(--ink); 
+  -webkit-text-fill-color: var(--ink); /* Safari greys out disabled text otherwise */
+  background: transparent; 
+  border-style: dashed; 
+  resize: none; 
+}
+.jobinfo input:disabled::placeholder, 
+.jobinfo textarea:disabled::placeholder { 
+  color: transparent; 
+}
+.viewonly { 
+  margin: 12px 0 0; 
+  padding: 9px 12px; 
+  border: 1px solid var(--rule); 
+  border-left: 3px solid var(--accent); 
+  border-radius: 6px; 
+  background: var(--sheet); 
+  font-size: 14px; 
+  color: var(--muted); 
+}

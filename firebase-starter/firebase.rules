@@ -15,6 +15,14 @@ service cloud.firestore {
       return signedIn() && request.auth.token.email_verified == true
         && exists(/databases/$(database)/documents/workspaces/$(wid)/invites/$(request.auth.token.email.lower()));
     }
+    // Can change lists: the workspace owner, or a member the owner switched "Can edit lists" on for (Settings > Members)
+    function canEditWs(wid) {
+      return signedIn() && (isOwner(wid)
+        || (isMember(wid) && get(/databases/$(database)/documents/workspaces/$(wid)/members/$(request.auth.uid)).data.get('canEdit', false) == true));
+    }
+    function jobWs(jobId) { return get(/databases/$(database)/documents/jobs/$(jobId)).data.workspaceId; }
+    // The write changes only these fields
+    function onlyChanges(keys) { return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys); }
     function validName(n) { return n is string && n.size() > 0 && n.size() <= 50; }
     // Company logo: optional, a small image data URL (settings.html shrinks it to 256px)
     function validLogo(d) { return !('logo' in d) || d.logo == null || (d.logo is string && d.logo.size() < 400000); }
@@ -33,11 +41,18 @@ service cloud.firestore {
       match /members/{memberId} {
         allow read: if isMember(wid);
         // You can only add yourself: as owner of a workspace you created, or as a member if you were invited
+        // Nobody can give themselves editing access when they join
         allow create: if signedIn() && memberId == request.auth.uid
+                      && request.resource.data.get('canEdit', false) == false
                       && ((isOwner(wid) && request.resource.data.role == 'owner')
                           || (isInvited(wid) && request.resource.data.role == 'member'));
-        // Edit your own profile, but never your own role
-        allow update: if signedIn() && memberId == request.auth.uid && request.resource.data.role == resource.data.role;
+        // Edit your own profile, but never your own role or editing access.
+        // The owner can switch "Can edit lists" on or off for other members (and change nothing else on their record).
+        allow update: if (signedIn() && memberId == request.auth.uid
+                          && request.resource.data.role == resource.data.role
+                          && request.resource.data.get('canEdit', false) == resource.data.get('canEdit', false))
+                      || (isOwner(wid) && memberId != request.auth.uid
+                          && onlyChanges(['canEdit']) && request.resource.data.canEdit is bool);
         allow delete: if isOwner(wid) || (signedIn() && memberId == request.auth.uid);
       }
 
@@ -57,27 +72,44 @@ service cloud.firestore {
         allow delete: if signedIn() && resource.data.uid == request.auth.uid;
       }
 
-      // Shared trades, levels and folders
+      // Shared trades, levels and folders: everyone in the workspace can read them, only editors can change them
       match /settings/{docId} {
-        allow read, write: if isMember(wid);
+        allow read: if isMember(wid);
+        allow write: if canEditWs(wid);
       }
     }
 
     // ---------- lists ----------
+    // Editors (owner + members allowed to edit) can change anything on a list.
+    // Everyone else, including people who open a shared link, can only check items off.
     match /jobs/{jobId} {
       // Anyone with the link can open one list (this is what shared links use)
       allow get: if true;
-      // Only people in the list's workspace can browse, create or delete lists
+      // Only people in the list's workspace can browse lists
       allow list: if isMember(resource.data.workspaceId);
       allow create: if signedIn() && request.resource.data.ownerId == request.auth.uid
-                    && isMember(request.resource.data.workspaceId);
-      allow delete: if isMember(resource.data.workspaceId);
-      // Subs can check things off, but nobody can change who owns the list or which workspace it is in
+                    && canEditWs(request.resource.data.workspaceId);
+      allow delete: if canEditWs(resource.data.workspaceId);
+      // Nobody can change who owns the list or which workspace it is in.
+      // Non-editors can only update the open/total counts, which refresh when they check items off.
       allow update: if request.resource.data.ownerId == resource.data.ownerId
-                    && request.resource.data.workspaceId == resource.data.workspaceId;
+                    && request.resource.data.workspaceId == resource.data.workspaceId
+                    && (canEditWs(resource.data.workspaceId)
+                        || onlyChanges(['openCount', 'totalCount', 'updatedAt']));
 
+      // Item status (done, note, trade). Checking off only changes done / doneAt / updatedAt.
+      match /items/{itemId} {
+        allow read: if true;
+        allow write: if canEditWs(jobWs(jobId));
+        allow create: if request.resource.data.keys().hasOnly(['done', 'doneAt', 'note', 'trade', 'updatedAt'])
+                      && request.resource.data.get('note', '') == ''
+                      && request.resource.data.get('trade', '') == '';
+        allow update: if onlyChanges(['done', 'doneAt', 'updatedAt']);
+      }
+      // The items themselves, rooms, and hidden rooms: editors only
       match /{coll}/{docId} {
-        allow read, write: if coll in ['items', 'custom', 'rooms', 'hidden'];
+        allow read: if coll in ['custom', 'rooms', 'hidden'];
+        allow write: if coll in ['custom', 'rooms', 'hidden'] && canEditWs(jobWs(jobId));
       }
     }
 

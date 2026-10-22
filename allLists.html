@@ -123,9 +123,9 @@
     <!-- Only shown when Firebase isn't configured (data is stored on this phone only) -->
     <div class="banner" id="offlineBanner" hidden>Shared saving isn't set up yet, so lists are saved on this phone only. Add your Firebase settings to <b>firebase-starter/firebase-config.js</b> to share them.</div>
     <div class="tools" style="margin-top:16px">
-      <button type="button" class="btn primary" id="newJob">New list</button>
+      <button type="button" class="btn primary edit-only" id="newJob">New list</button>
       <!-- ADDED: button that shows/hides the "create a folder" form below -->
-      <button type="button" class="btn" id="newFolder">New folder</button>
+      <button type="button" class="btn edit-only" id="newFolder">New folder</button>
       <span class="saved" id="jobsSaved"></span>
     </div>
     <!-- ADDED: form for naming a new folder. Hidden until "New folder" is tapped. -->
@@ -167,7 +167,7 @@
       <!-- ADDED: free-text description of the job, under Address and Lot #. Saves like the other fields through data-meta. -->
       <div class="f desc"><label for="jDesc">Description</label><textarea id="jDesc" rows="2" maxlength="1000" data-meta="description" placeholder="Notes about this job, like scope, access or gate code"></textarea></div>
       <!-- ADDED: choose which folder this list lives in. Options are filled in by applyFolders(). It has no data-meta attribute because it saves through its own change listener. -->
-      <div class="f full"><label for="jFolder">Folder</label><select id="jFolder" aria-label="Folder"></select></div>
+      <div class="f full edit-only"><label for="jFolder">Folder</label><select id="jFolder" aria-label="Folder"></select></div>
     </div>
     <!-- Sticky header: progress bar, filters, and toolbar -->
     <header class="top">
@@ -181,17 +181,19 @@
       <div class="tools">
         <button type="button" class="btn" id="linkBtn">Send link</button>
         <!-- REMOVED: the "Copy list for subs" button (id="copyBtn") was here -->
-        <button type="button" class="btn" id="tradesBtn">Edit levels &amp; trades</button>
+        <button type="button" class="btn edit-only" id="tradesBtn">Edit levels &amp; trades</button>
         <span class="saved" id="saved">Loading…</span>
       </div>
       <!-- Fallback textarea shown when the clipboard can't be used automatically -->
       <div class="copybox" id="copyBox" hidden><textarea id="copyText" readonly aria-label="Text to copy"></textarea></div>
       <!-- Panel for adding/removing levels (floors) and trades -->
-      <div class="copybox" id="tradesBox" hidden><div class="eyebrow">Levels</div><div class="when" style="margin-top:4px">Removing a level moves its rooms to the first level.</div><div class="meta" id="floorList"></div><form id="addFloor" style="display:grid;grid-template-columns:1fr auto;gap:8px;padding:10px 0 14px"><input id="newFloor" type="text" maxlength="30" placeholder="Add a level (e.g. Basement)" aria-label="New level"><button class="btn primary" type="submit">Add</button></form><div class="eyebrow">Trades</div><div class="meta" id="tradeList"></div><form id="addTrade" style="display:grid;grid-template-columns:1fr auto;gap:8px;padding-top:10px"><input id="newTrade" type="text" maxlength="30" placeholder="Add a trade (e.g. Insulation)" aria-label="New trade"><button class="btn primary" type="submit">Add</button></form></div>
+      <div class="copybox edit-only" id="tradesBox" hidden><div class="eyebrow">Levels</div><div class="when" style="margin-top:4px">Removing a level moves its rooms to the first level.</div><div class="meta" id="floorList"></div><form id="addFloor" style="display:grid;grid-template-columns:1fr auto;gap:8px;padding:10px 0 14px"><input id="newFloor" type="text" maxlength="30" placeholder="Add a level (e.g. Basement)" aria-label="New level"><button class="btn primary" type="submit">Add</button></form><div class="eyebrow">Trades</div><div class="meta" id="tradeList"></div><form id="addTrade" style="display:grid;grid-template-columns:1fr auto;gap:8px;padding-top:10px"><input id="newTrade" type="text" maxlength="30" placeholder="Add a trade (e.g. Insulation)" aria-label="New trade"><button class="btn primary" type="submit">Add</button></form></div>
     </header>
 
     <!-- Form to add a new room to this list and choose which level it belongs to -->
-    <form class="addroom" id="addRoom">
+    <!-- ADDED: shown to people who can only check items off (see applyPerms in allLists.js) -->
+    <p class="viewonly" id="viewOnly" hidden>You can check items off this list. Only editors can add, change or remove things.</p>
+    <form class="addroom edit-only" id="addRoom">
       <input id="newRoom" type="text" maxlength="40" placeholder="Add New Room" aria-label="New room name">
       <select id="newRoomFloor" aria-label="List"></select>
       <button class="btn primary" type="submit">Add</button>
@@ -201,10 +203,10 @@
     <main id="rooms"></main>
 
     <!-- Delete-the-whole-list link and its confirmation box -->
-    <div class="danger-zone" id="dangerZone">
+    <div class="danger-zone edit-only" id="dangerZone">
       <button type="button" class="link muted" id="askDelJob">Delete this list</button>
     </div>
-    <div class="confirm boxed" id="confirmDelJob" hidden>
+    <div class="confirm boxed edit-only" id="confirmDelJob" hidden>
       Delete this whole list for everyone? This can't be undone.
       <div class="acts"><button type="button" class="btn" id="keepJob">Keep it</button><button type="button" class="btn danger" id="delJob">Delete</button></div>
     </div>
