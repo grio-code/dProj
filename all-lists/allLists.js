@@ -24,7 +24,7 @@ const DEFAULT_TRADES = [
   "Insulation",
   "Drywall",
   "Paint",
-  "Capeting & Hardsurfaces",
+  "Carpeting & Hard Surfaces",
   "Wood Stairs",
   "Millwork",
   "Cabinets",
