@@ -34,7 +34,7 @@
     btn.disabled = true;
     try {
       await auth.signInWithEmailAndPassword(email, pw);
-      location.href = 'allLists.html';
+      location.href = 'index.html';
     } catch (ex) {
       showMsg(authMessage(ex.code));
       btn.disabled = false;
