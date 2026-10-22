@@ -18,7 +18,7 @@
   const $ = id => document.getElementById(id);
 
   // ---------- Settings you may want to change ----------
-  const APP_URL = 'allLists.html';                              // where to go once setup is finished
+  const APP_URL = 'index.html';                              // where to go once setup is finished
   const PAGE_URL = location.origin + location.pathname;         // this page; emailed links come back here
   const MAX_PHOTO_BYTES = 2 * 1024 * 1024;                      // 2 MB
   const PHOTO_TYPES = ['image/png', 'image/jpeg', 'image/webp']; // SVG left out on purpose: it can carry scripts
