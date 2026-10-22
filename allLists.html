@@ -164,6 +164,8 @@
       <div class="f w2"><label for="jCommunity">Community</label><input id="jCommunity" type="text" maxlength="60" data-meta="community" placeholder="Community name"></div>
       <div class="f w2"><label for="jAddress">Address</label><input id="jAddress" type="text" maxlength="100" data-meta="address" placeholder="Street address"></div>
       <div class="f"><label for="jLot">Lot #</label><input id="jLot" type="text" maxlength="20" data-meta="lot" placeholder="Lot"></div>
+      <!-- ADDED: free-text description of the job, under Address and Lot #. Saves like the other fields through data-meta. -->
+      <div class="f desc"><label for="jDesc">Description</label><textarea id="jDesc" rows="2" maxlength="1000" data-meta="description" placeholder="Notes about this job, like scope, access or gate code"></textarea></div>
       <!-- ADDED: choose which folder this list lives in. Options are filled in by applyFolders(). It has no data-meta attribute because it saves through its own change listener. -->
       <div class="f full"><label for="jFolder">Folder</label><select id="jFolder" aria-label="Folder"></select></div>
     </div>

@@ -89,7 +89,7 @@ function blank() {
     rooms: {}, 
     hidden: {}, 
     meta: {} 
-  }; } // meta = date/community/address/lot
+  }; } // meta = date/community/address/lot/description
 // ui = temporary screen state that isn't saved to the database
 //   show: status filter, trade: trade filter, open: which rooms are expanded,
 //   edit: id of the item being edited, confirm: room awaiting remove-confirmation, editRoom: room being renamed
@@ -240,7 +240,7 @@ let dirtyMeta = {};
 function saveMeta() {
   clearTimeout(metaQ);
   metaQ = setTimeout(() => {
-    const m = state.meta, data = { date: m.date || "", community: m.community || "", address: m.address || "", lot: m.lot || "" };
+    const m = state.meta, data = { date: m.date || "", community: m.community || "", address: m.address || "", lot: m.lot || "", description: m.description || "" }; // CHANGED: description added
     if (!fs) { 
       saveLocalJob(); 
       flag("Saved on this phone"); 
@@ -393,6 +393,7 @@ function render() {
   if (focusId) { const el = document.getElementById(focusId); if (el) el.focus({ preventScroll: true }); }
   // Fill the job detail inputs (skipping the one being typed in so it doesn't get overwritten)
   document.querySelectorAll("[data-meta]").forEach(el => { if (document.activeElement !== el) el.value = state.meta[el.dataset.meta] || ""; });
+  growDesc(); // ADDED: size the description box to its text
   // ADDED: show this list's current folder in the Folder dropdown ("No folder" if it has none, or its folder was deleted)
   const fsel = document.getElementById("jFolder");
   if (document.activeElement !== fsel) fsel.value = foldersList[state.meta.folderId] ? state.meta.folderId : "";
@@ -406,7 +407,7 @@ function render() {
 function listText() {
   const lines = [], m = state.meta;
   lines.push("PUNCH LIST" + (ui.trade ? " · " + ui.trade : ""));
-  [m.date && "Date: " + fmtDay(m.date), m.community && "Community: " + m.community, m.address && "Address: " + m.address, m.lot && "Lot: " + m.lot].filter(Boolean).forEach(l => lines.push(l));
+  [m.date && "Date: " + fmtDay(m.date), m.community && "Community: " + m.community, m.address && "Address: " + m.address, m.lot && "Lot: " + m.lot, m.description && "Description: " + m.description].filter(Boolean).forEach(l => lines.push(l));
   lines.push("");
   let any = false;
   allRooms().forEach(room => {
@@ -672,12 +673,20 @@ document.getElementById("showF").addEventListener("change", e => {
 document.getElementById("tradeF").addEventListener("change", e => { 
   ui.trade = e.target.value; 
   render(); });
+// ADDED: the description box grows with its text instead of scrolling inside a tiny box
+function growDesc() {
+  const t = document.getElementById("jDesc");
+  if (!t) return;
+  t.style.height = "auto";
+  t.style.height = t.scrollHeight + 2 + "px";
+}
 // Typing in any job detail field updates state, updates the heading right away (CHANGED: updateTitle() added), and triggers a debounced save
 document.querySelectorAll("[data-meta]").forEach(el => el.addEventListener("input", () => { 
   state.meta = Object.assign({}, 
   state.meta, 
   { [el.dataset.meta]: el.value }); 
   dirtyMeta[el.dataset.meta] = true; // ADDED 
+  if (el.id === "jDesc") growDesc(); // ADDED
   updateTitle(); 
   saveMeta(); 
 }));
@@ -716,6 +725,7 @@ function createJob(folderId) {
     community: "", 
     address: "", 
     lot: "", 
+    description: "", // ADDED
     folderId: folderId || "", 
     createdAt: new Date().toISOString() 
   }; // ADDED: folderId

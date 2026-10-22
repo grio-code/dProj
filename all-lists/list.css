@@ -163,8 +163,26 @@ h1 {
   background: var(--sheet); 
   font-size: 16px; 
 } /* 16px stops iOS from zooming in on focus */
-.jobinfo input::placeholder { 
+.jobinfo input::placeholder,
+.jobinfo textarea::placeholder { 
   color: var(--muted); 
+}
+/* ADDED: Description box under Address and Lot #, styled like the other fields; takes the whole row */
+.jobinfo .desc { 
+  grid-column: 1 / -1; 
+}
+.jobinfo textarea { 
+  width: 100%; 
+  min-width: 0; 
+  min-height: 44px; 
+  padding: 9px 10px; 
+  border: 1px solid var(--rule); 
+  border-radius: 6px; 
+  background: var(--sheet); 
+  font-size: 16px; 
+  line-height: 1.4; 
+  resize: vertical; 
+  overflow: hidden; 
 }
 
 /* ---------- Progress bar, filters, toolbar buttons ---------- */
@@ -527,6 +545,9 @@ li.item {
   .jobinfo .w2 { 
     order: 2; 
   }            /* and move below Date and Lot */
+  .jobinfo .desc { 
+    order: 2; 
+  }          /* ADDED: Description stays right under Address on phones */
   .jobinfo .full { 
     order: 3; 
   }          /* ADDED: the Folder dropdown goes last on phones */
