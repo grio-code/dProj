@@ -182,6 +182,7 @@ const drag = {
   timer: null, 
   active: false,
   type: "", 
+  kind: "", // ADDED: "list" or "folder", whichever is being dragged
   startX: 0, startY: 0, lastX: 0, lastY: 0, offX: 0, offY: 0, 
   target: null, 
   rerender: false, 
@@ -192,6 +193,21 @@ let dragEndedAt = 0; // when the last drag ended, used to ignore the click that 
 const sortedFolders = () => Object.entries(foldersList).sort((a, b) => (a[1].name || "").localeCompare(b[1].name || "", undefined, { 
   sensitivity: "base" 
 }));
+// ADDED: folders inside folders. Each folder can have a parentId (the folder it sits in). No parentId, or a parent that was deleted, means it's at the top.
+const parentOf = fid => { const p = foldersList[fid] && foldersList[fid].parentId; return p && foldersList[p] && p !== fid ? p : ""; };
+// The folders directly inside folder pid ("" = the top level), A to Z
+const childFolders = pid => sortedFolders().filter(([id]) => parentOf(id) === pid);
+// Is folder a the same as, or somewhere inside, folder b? Used so a folder can't be dropped into itself or into one of its own sub-folders.
+function isInside(a, b) {
+  for (let f = a, n = 0; f && n < 100; f = parentOf(f), n++) if (f === b) return true; // n stops a broken loop in old data
+  return false;
+}
+// Full name of a folder, like "Oakwood / Phase 2", for the Folder dropdown
+function folderPath(fid) {
+  const names = [];
+  for (let f = fid, n = 0; f && n < 100; f = parentOf(f), n++) names.unshift(foldersList[f].name);
+  return names.join(" / ");
+}
 let unsubs = [];       // functions that stop live Firestore listeners
 
 // Read saved UI preferences (which rooms were open, whether the tip was hidden)
@@ -513,32 +529,36 @@ function renderJobs() {
   document.querySelectorAll("#jobs input").forEach(el => keep[el.id] = el.value);
   let html = "";
   // ADDED: one expandable card per folder (same look as the room cards), folders sorted A to Z
-  sortedFolders().forEach(([fid, fo]) => {
+  // CHANGED: folders can now hold other folders. folderHtml() draws one folder, and inside it draws its sub-folders first, then its lists.
+  function folderHtml(fid, fo) {
     const inside = rows.filter(([, j]) => j.folderId === fid); // the lists that belong to this folder
+    const subs = childFolders(fid);                             // ADDED: the folders inside this folder
     const n = inside.length;
     const isOpen = !!ui.openFolders[fid];
-    html += `<li><section class="room ${isOpen ? "open" : ""}" data-dropfolder="${esc(fid)}">
+    const count = [subs.length && subs.length + (subs.length === 1 ? " folder" : " folders"), (n || !subs.length) && n + (n === 1 ? " list" : " lists")].filter(Boolean).join(" · ");
+    return `<li><section class="room ${isOpen ? "open" : ""}" data-dropfolder="${esc(fid)}">
       <button type="button" class="room-head" data-ftoggle="${esc(fid)}" aria-expanded="${isOpen}">
         <svg class="ficon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" fill="none" stroke="currentColor" stroke-width="2"/></svg>
         <span class="room-name">${esc(fo.name)}</span>
-        <span class="pill none">${n} ${n === 1 ? "list" : "lists"}</span>
+        <span class="pill none">${count}</span>
         <svg class="chev" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 6l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2"/></svg>
       </button>
       ${isOpen ? `<div class="room-body">
         ${ui.renameFolder === fid ? `<div class="edit" style="padding:12px 14px"><input type="text" id="fname-${esc(fid)}" maxlength="40" value="${esc(fo.name)}" aria-label="Folder name"><div class="acts"><button type="button" class="btn" data-fcancel>Cancel</button><button type="button" class="btn primary" data-fsave="${esc(fid)}">Save</button></div></div>` : ""}
-        <ul class="jobs" style="margin:0;padding:12px 14px">${n ? inside.map(([id, j]) => jobRow(id, j)).join("") : `<li class="empty" style="padding:0">No lists in this folder yet.</li>`}</ul>
-        ${!canEdit ? "" : ui.confirmFolder === fid ? `<div class="confirm">Delete the folder ${esc(fo.name)}? The lists inside are not deleted. They move back to the main list.
+        <ul class="jobs" style="margin:0;padding:12px 14px">${subs.map(([sid, so]) => folderHtml(sid, so)).join("")}${n ? inside.map(([id, j]) => jobRow(id, j)).join("") : subs.length ? "" : `<li class="empty" style="padding:0">No lists in this folder yet.</li>`}</ul>
+        ${!canEdit ? "" : ui.confirmFolder === fid ? `<div class="confirm">Delete the folder ${esc(fo.name)}? The lists and folders inside are not deleted. They move up to ${foldersList[parentOf(fid)] ? esc(foldersList[parentOf(fid)].name) : "the main list"}.
             <div class="acts"><button type="button" class="btn" data-fcancel>Keep it</button><button type="button" class="btn danger" data-fdel="${esc(fid)}">Delete folder</button></div></div>`
           : `<div class="room-foot" style="gap:16px"><button type="button" class="link" data-fnew="${esc(fid)}">New list here</button><button type="button" class="link" data-frename="${esc(fid)}">Rename</button><button type="button" class="link muted" data-fask="${esc(fid)}">Delete folder</button></div>`}
       </div>` : ""}
     </section></li>`;
-  });
+  }
+  childFolders("").forEach(([fid, fo]) => { html += folderHtml(fid, fo); }); // top-level folders; each one draws its own sub-folders
   // ADDED: lists that are not in any folder (or whose folder was deleted) show below the folders
   const loose = rows.filter(([, j]) => !j.folderId || !foldersList[j.folderId]);
   if (sortedFolders().length && loose.length) html += `<li data-dropfolder=""><h2 class="floor">Not in a folder</h2></li>`;
   html += loose.map(([id, j]) => jobRow(id, j)).join("");
   document.getElementById("jobs").innerHTML = html || `<li class="empty">${canEdit ? "No punch lists yet. Tap <b>New list</b> to start one." : "No punch lists yet."}</li>`;
-  document.getElementById("dragHint").hidden = !(canEdit && sortedFolders().length && rows.length); // ADDED: show the drag tip only when it's useful
+  document.getElementById("dragHint").hidden = !(canEdit && sortedFolders().length && (rows.length || sortedFolders().length > 1)); // ADDED: show the drag tip only when it's useful
   // ADDED: put back anything that was being typed, and the focus
   Object.entries(keep).forEach(([k, v]) => { const el = document.getElementById(k); if (el) el.value = v; });
   if (focusId) { const el = document.getElementById(focusId); if (el) el.focus({ 
@@ -685,9 +705,10 @@ function applyTrades() {
 // ADDED: refresh everything that shows folders: the Folder dropdown on a list, and the home screen
 function applyFolders() {
   const sel = document.getElementById("jFolder");
-  sel.innerHTML = `<option value="">No folder</option>` + sortedFolders().map(([id, f]) => `<option value="${
-  esc(id)
-  }">${esc(f.name)}</option>`).join("");
+  // CHANGED: sub-folders show their full path, e.g. "Oakwood / Phase 2", sorted by that path
+  sel.innerHTML = `<option value="">No folder</option>` + Object.keys(foldersList).map(id => [id, folderPath(id)])
+    .sort((a, b) => a[1].localeCompare(b[1], undefined, { sensitivity: "base" }))
+    .map(([id, p]) => `<option value="${esc(id)}">${esc(p)}</option>`).join("");
   sel.value = foldersList[state.meta.folderId] ? state.meta.folderId : "";
   renderJobs();
 }
@@ -888,9 +909,13 @@ document.getElementById("jobs").addEventListener("click", e => {
     renderJobs(); 
   }
   // Confirm: remove the folder. The lists inside are NOT deleted. They still point at the old folder id, which no longer exists, so they show up under "Not in a folder".
+  // CHANGED: the lists and sub-folders inside move up to this folder's parent (or the main list if it's a top-level folder)
   else if (d.fdel) {
-    const rest = Object.assign({}, foldersList); 
-    delete rest[d.fdel]; 
+    const up = parentOf(d.fdel);
+    Object.entries(jobsList).forEach(([jid, j]) => { if (j.folderId === d.fdel) setJobFolder(jid, up, true); });
+    const rest = Object.assign({}, foldersList);
+    delete rest[d.fdel];
+    Object.keys(rest).forEach(k => { if (rest[k].parentId === d.fdel) rest[k] = Object.assign({}, rest[k], { parentId: up }); });
     foldersList = rest;
     ui.confirmFolder = null; 
     saveSettings(); 
@@ -904,7 +929,8 @@ document.getElementById("jobs").addEventListener("click", e => {
 const jobsEl = document.getElementById("jobs");
 
 // Move a list into a folder (folderId = "" means take it out of any folder) and save it
-function setJobFolder(id, folderId) {
+// CHANGED: quiet = true skips the "Moved to" message and opening the folder (used when a folder is deleted)
+function setJobFolder(id, folderId, quiet) {
   const cur = jobsList[id] && foldersList[jobsList[id].folderId] ? jobsList[id].folderId : "";
   if (cur === folderId || (folderId && !foldersList[folderId])) return; // already there, or the folder doesn't exist
   jobsList[id] = Object.assign({}, jobsList[id], { 
@@ -924,11 +950,32 @@ function setJobFolder(id, folderId) {
     }); 
     lsSave(); 
   }
+  if (quiet) return;
   if (folderId) { 
     ui.openFolders[folderId] = true; 
     uiSave(); 
   } // open the folder so you can see it landed
   toast(folderId ? "Moved to " + foldersList[folderId].name : "Taken out of its folder");
+}
+// ADDED: move a folder into another folder (parentId = "" means move it to the top level) and save it.
+// Refuses to put a folder inside itself or inside one of its own sub-folders.
+function setFolderParent(fid, parentId) {
+  if (!foldersList[fid] || parentOf(fid) === parentId) return;           // gone, or already there
+  if (parentId && (!foldersList[parentId] || isInside(parentId, fid))) { // would loop
+    toast("A folder can't go inside itself."); return;
+  }
+  foldersList = Object.assign({}, foldersList, { [fid]: Object.assign({}, foldersList[fid], { parentId }) });
+  saveSettings();
+  if (parentId) { ui.openFolders[parentId] = true; uiSave(); } // open the folder so you can see it landed
+  applyFolders();
+  toast(parentId ? "Moved to " + foldersList[parentId].name : "Moved to the main list");
+}
+// ADDED: can the thing being dragged be dropped on this target? A folder can't land on itself or inside its own sub-folders.
+function canDropOn(target) {
+  if (!target) return false;
+  const to = target.dataset.dropfolder;
+  if (drag.kind !== "folder") return true;
+  return !(to && isInside(to, drag.id)) && to !== parentOf(drag.id);
 }
 
 // Begin dragging: make the floating copy, fade the original, and (if the list is in a folder) add a drop area for taking it back out
@@ -945,11 +992,17 @@ function startDrag() {
   drag.ghost = document.createElement("ul"); 
   drag.ghost.className = "jobs drag-ghost"; 
   drag.ghost.style.width = r.width + "px";
-  drag.ghost.appendChild(li.cloneNode(true));
+  if (drag.kind === "folder") {
+    // ADDED: for a folder, the floating copy is just its header (an open folder could be very tall)
+    const g = document.createElement("li"), sec = document.createElement("section");
+    sec.className = "room"; sec.appendChild(drag.el.cloneNode(true)); g.appendChild(sec);
+    drag.ghost.appendChild(g);
+  } else drag.ghost.appendChild(li.cloneNode(true));
   document.body.appendChild(drag.ghost);
   li.classList.add("is-dragging-source");
   const j = jobsList[drag.id];
-  if (j && foldersList[j.folderId]) {
+  const inFolder = drag.kind === "folder" ? !!parentOf(drag.id) : !!(j && foldersList[j.folderId]);
+  if (inFolder) {
     const dz = document.createElement("li");
     dz.className = "dropzone"; 
     dz.dataset.dropfolder = ""; 
@@ -969,7 +1022,8 @@ function tick() {
   else if (y > window.innerHeight - edge) window.scrollBy(0, Math.ceil((y - (window.innerHeight - edge)) / 6));
   drag.ghost.style.transform = `translate(${drag.lastX - drag.offX}px, ${drag.lastY - drag.offY}px)`;
   const under = document.elementFromPoint(drag.lastX, drag.lastY); // the floating copy ignores the pointer, so this sees what's beneath it
-  const target = under ? under.closest("[data-dropfolder]") : null;
+  let target = under ? under.closest("[data-dropfolder]") : null;
+  if (!canDropOn(target)) target = null; // ADDED: e.g. a folder over itself
   if (target !== drag.target) { 
     if (drag.target) drag.target.classList.remove("drop-hover"); 
     if (target) target.classList.add("drop-hover"); 
@@ -991,11 +1045,15 @@ function finishDrag(drop) {
     jobsEl.querySelectorAll(".is-dragging-source").forEach(el => el.classList.remove("is-dragging-source"));
     jobsEl.querySelectorAll(".drop-hover").forEach(el => el.classList.remove("drop-hover"));
     const dz = jobsEl.querySelector(".dropzone"); if (dz) dz.remove();
-    if (drop && target) setJobFolder(drag.id, target.dataset.dropfolder);
+    if (drop && target) { 
+      if (drag.kind === "folder") setFolderParent(drag.id, target.dataset.dropfolder); // ADDED
+      else setJobFolder(drag.id, target.dataset.dropfolder);
+    }
   }
   const redraw = wasActive || drag.rerender;
   drag.id = null; 
   drag.el = null; 
+  drag.kind = "";
   drag.target = null; 
   drag.rerender = false;
   if (redraw) renderJobs();
@@ -1005,12 +1063,14 @@ function finishDrag(drop) {
 jobsEl.addEventListener("pointerdown", e => {
   if (e.pointerType === "mouse" && e.button !== 0) 
   return;
+  if (!canEdit) return; // CHANGED: only editors can drag lists and folders
   const a = e.target.closest("a[data-job]");
-  if (!a || !sortedFolders().length || !canEdit) // CHANGED: only editors can drag lists into folders
-  return;
+  const fh = a ? null : e.target.closest("button[data-ftoggle]"); // ADDED: a folder's header can be dragged too
+  if (a ? !sortedFolders().length : !(fh && sortedFolders().length > 1)) return; // nothing to drop it into
   Object.assign(drag, { 
-    id: a.dataset.job, 
-    el: a, 
+    id: a ? a.dataset.job : fh.dataset.ftoggle, 
+    kind: a ? "list" : "folder", // ADDED
+    el: a || fh, 
     type: e.pointerType, 
     startX: e.clientX, 
     startY: e.clientY, 
@@ -1123,6 +1183,8 @@ const sigBack = document.getElementById("sigBack"), pad = document.getElementByI
 let myName = ""; // the signed-in person's name from their profile, filled in during startup
 function lastSigner() { try { return localStorage.getItem(LS + "-signer") || ""; } catch (e) { return ""; } }
 function openSig(id) {
+  // ADDED: if the browser is still showing an old copy of the page (no signature box), don't break. Ask for a reload instead.
+  if (!sigBack || !pad) { toast("Reload the page to sign items off."); return; }
   sig.id = id; sig.drawn = false;
   const c = state.custom[id];
   document.getElementById("sigItem").textContent = c ? c.text : "";
@@ -1146,19 +1208,19 @@ function sizePad() {
   sig.drawn = false;
 }
 const padPt = e => { const r = pad.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; };
-pad.addEventListener("pointerdown", e => {
+pad?.addEventListener("pointerdown", e => {
   e.preventDefault(); pad.setPointerCapture(e.pointerId);
   sig.drawing = true; sig.last = padPt(e);
   const ctx = pad.getContext("2d"); ctx.beginPath(); ctx.arc(sig.last.x, sig.last.y, 1.2, 0, Math.PI * 2); ctx.fillStyle = "#1d2422"; ctx.fill(); // a tap leaves a dot
   sig.drawn = true; sigErr.hidden = true;
 });
-pad.addEventListener("pointermove", e => {
+pad?.addEventListener("pointermove", e => {
   if (!sig.drawing) return;
   const p = padPt(e), ctx = pad.getContext("2d");
   ctx.beginPath(); ctx.moveTo(sig.last.x, sig.last.y); ctx.lineTo(p.x, p.y); ctx.stroke();
   sig.last = p;
 });
-["pointerup", "pointercancel", "pointerleave"].forEach(t => pad.addEventListener(t, () => { sig.drawing = false; }));
+["pointerup", "pointercancel", "pointerleave"].forEach(t => pad?.addEventListener(t, () => { sig.drawing = false; }));
 // Shrink the signature to at most 400px wide before saving, so each one stays small (usually under 15 KB)
 function sigImage() {
   const w = Math.min(400, pad.width), h = Math.round(pad.height * w / pad.width);
@@ -1166,12 +1228,12 @@ function sigImage() {
   out.getContext("2d").drawImage(pad, 0, 0, w, h);
   return out.toDataURL("image/png");
 }
-document.getElementById("sigClear").addEventListener("click", sizePad);
-document.getElementById("sigCancel").addEventListener("click", closeSig);
-sigBack.addEventListener("click", e => { if (e.target === sigBack) closeSig(); }); // tap outside the box to cancel
-document.addEventListener("keydown", e => { if (e.key === "Escape" && !sigBack.hidden) closeSig(); });
-window.addEventListener("resize", () => { if (!sigBack.hidden && !sig.drawn) sizePad(); });
-document.getElementById("sigOk").addEventListener("click", () => {
+document.getElementById("sigClear")?.addEventListener("click", sizePad);
+document.getElementById("sigCancel")?.addEventListener("click", closeSig);
+sigBack?.addEventListener("click", e => { if (e.target === sigBack) closeSig(); }); // tap outside the box to cancel
+document.addEventListener("keydown", e => { if (e.key === "Escape" && sigBack && !sigBack.hidden) closeSig(); });
+window.addEventListener("resize", () => { if (sigBack && !sigBack.hidden && !sig.drawn) sizePad(); });
+document.getElementById("sigOk")?.addEventListener("click", () => {
   const name = sigName.value.replace(/\s+/g, " ").trim();
   const err = !name ? "Type your name." : !sig.drawn ? "Sign in the box." : "";
   if (err) { sigErr.textContent = err; sigErr.hidden = false; (name ? pad : sigName).focus(); return; }

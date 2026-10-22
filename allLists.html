@@ -23,12 +23,12 @@
 
 <link href="nav-bar/nav.css" rel="stylesheet">
 <script src="nav-bar/nav.js" defer></script>
-<link href="all-lists/list.css" rel="stylesheet"> 
+<link href="all-lists/list.css?v=3" rel="stylesheet"> 
 <!-- Firebase libraries (compat build) and your project settings. These must load BEFORE allLists.js -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="firebase-starter/firebase-config.js"></script>
-<script src="all-lists/allLists.js" defer></script>
+<script src="all-lists/allLists.js?v=3" defer></script> <!-- CHANGED: ?v=2 makes browsers load the new version. Raise the number each time you change this file or list.css. -->
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
@@ -134,7 +134,7 @@
       <button class="btn primary" type="submit">Create</button>
     </form>
     <!-- ADDED: small tip about dragging. Shown by renderJobs() only when there is at least one folder and one list. -->
-    <p class="when" id="dragHint" style="margin:12px 0 0" hidden>Tip: press and hold a list, then drag it onto a folder.</p>
+    <p class="when" id="dragHint" style="margin:12px 0 0" hidden>Tip: press and hold a list or a folder, then drag it onto a folder.</p>
     <!-- Filled in by renderJobs() -->
     <ul class="jobs" id="jobs"></ul>
     <!-- Dismissible tip for installing the app on an iPhone home screen -->
