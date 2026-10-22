@@ -191,8 +191,13 @@
         <p id="doneText"></p>
         <p class="f-hint" id="doneInvites" hidden></p>
         <div id="doneSend" hidden><div style="display:grid;gap:8px;margin-bottom:14px">
-          <a class="btn primary" id="doneMail" href="#" style="text-decoration:none;display:flex;align-items:center;justify-content:center">Email the invitation</a>
-          <button type="button" class="btn" id="doneCopy">Copy invitation text</button>
+          <div class="f-hint">Send it with:</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <a class="btn" id="doneGmail" href="#" target="_blank" rel="noopener" style="text-decoration:none;display:flex;align-items:center;justify-content:center">Gmail</a>
+            <a class="btn" id="doneOutlook" href="#" target="_blank" rel="noopener" style="text-decoration:none;display:flex;align-items:center;justify-content:center">Outlook</a>
+            <a class="btn" id="doneMail" href="#" style="text-decoration:none;display:flex;align-items:center;justify-content:center">Email app</a>
+            <button type="button" class="btn" id="doneCopy">Copy text</button>
+          </div>
         </div></div>
         <div class="f" id="linkRow" hidden>
           <label for="shareLink">Invite link</label>

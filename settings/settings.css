@@ -206,6 +206,20 @@ label.btn:focus-within { outline: 2px solid var(--focus); outline-offset: 2px; }
 .st-result .st-actions { margin-top: 12px; }
 a.btn { text-decoration: none; }
 
+/* "Send invite" menu */
+.st-menu { position: relative; }
+.st-menu-list {
+  position: absolute; right: 0; top: calc(100% + 4px); z-index: 10;
+  min-width: 170px; display: grid; gap: 2px; padding: 6px;
+  background: var(--sheet); border: 1px solid var(--rule); border-radius: 8px;
+  box-shadow: 0 12px 30px -12px rgba(0,0,0,.4);
+}
+.st-menu-item {
+  display: block; padding: 8px 10px; border: 0; border-radius: 6px; background: none;
+  color: var(--ink); font: 500 14px var(--f-body); text-align: left; text-decoration: none; cursor: pointer;
+}
+.st-menu-item:hover { background: var(--chip); color: var(--chip-ink); }
+
 /* ---------- Phones ---------- */
 @media (max-width: 760px) {
   .st-layout { grid-template-columns: minmax(0, 1fr); gap: 16px; }
@@ -227,6 +241,7 @@ a.btn { text-decoration: none; }
   .st-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .st-people li { flex-wrap: wrap; }
   .st-person { flex: 1 1 55%; }
-  .st-people li .btn { flex: 1 1 28%; }
+  .st-people li .btn, .st-people li .st-menu { flex: 1 1 28%; }
+  .st-people li .st-menu .btn { width: 100%; }
   h1 { font-size: 34px; }
 }

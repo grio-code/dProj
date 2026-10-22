@@ -185,13 +185,7 @@
       li.append(pic, who, el('span', 'role role--pending', 'Pending'));
       if (st.isOwner) {
         const em = i.email || i.id;
-        const mail = el('a', 'btn btn--sm', 'Email invite');
-        mail.href = mailtoFor([em]);
-        mail.title = 'Opens your email app with the invitation written for you';
-        const cp = el('button', 'btn btn--sm', 'Copy invite');
-        cp.type = 'button';
-        cp.addEventListener('click', () => copyText(inviteText(em), 'Invitation for ' + em + ' copied. Paste it into an email or text.'));
-        li.append(mail, cp);
+        li.appendChild(sendMenu([em]));
         const rv = el('button', 'btn btn--sm btn--quiet', 'Revoke');
         rv.type = 'button';
         rv.addEventListener('click', () => revokeInvite(i, rv));
@@ -303,14 +297,59 @@
       from
     ].join('\n');
   }
-  // One person: To. Several: Bcc, so invitees don't see each other's addresses.
-  function mailtoFor(emails) {
+  // Ways to send the invitation. A plain mailto: link only works when the computer has an email app set up
+  // (otherwise the browser opens a blank page), so webmail compose links are offered too.
+  // One person goes in To; several go in Bcc so invitees don't see each other's addresses.
+  function composeLinks(emails) {
     const one = emails.length === 1;
-    const q = (one ? '' : 'bcc=' + emails.map(encodeURIComponent).join(',') + '&')
-      + 'subject=' + encodeURIComponent(inviteSubject())
-      + '&body=' + encodeURIComponent(inviteText(one ? emails[0] : ''));
-    return 'mailto:' + (one ? encodeURIComponent(emails[0]) : '') + '?' + q;
+    const to = one ? emails[0] : '';
+    const bcc = one ? '' : emails.join(',');
+    const subject = inviteSubject();
+    const body = inviteText(one ? emails[0] : '');
+    const qs = o => Object.entries(o).filter(([, v]) => v).map(([k, v]) => k + '=' + encodeURIComponent(v)).join('&');
+    return [
+      { label: 'Gmail', href: 'https://mail.google.com/mail/?' + qs({ view: 'cm', fs: '1', to, bcc, su: subject, body }), web: true },
+      { label: 'Outlook', href: 'https://outlook.office.com/mail/deeplink/compose?' + qs({ to, bcc, subject, body }), web: true },
+      { label: 'Email app', href: 'mailto:' + encodeURIComponent(to) + '?' + qs({ bcc, subject, body }), web: false }
+    ];
   }
+  function linkBtn(l, cls) {
+    const a = el('a', cls, l.label);
+    a.href = l.href;
+    if (l.web) { a.target = '_blank'; a.rel = 'noopener'; }
+    return a;
+  }
+  function copyBtn(emails, cls, label) {
+    const b = el('button', cls, label || 'Copy text');
+    b.type = 'button';
+    b.addEventListener('click', () => copyText(inviteText(emails.length === 1 ? emails[0] : ''),
+      'Invitation copied. Paste it into an email or text message.'));
+    return b;
+  }
+  // "Send invite" button with a small menu (used on each pending invite)
+  function sendMenu(emails) {
+    const wrap = el('div', 'st-menu');
+    const btn = el('button', 'btn btn--sm', 'Send invite ▾');
+    btn.type = 'button';
+    btn.setAttribute('aria-haspopup', 'true');
+    btn.setAttribute('aria-expanded', 'false');
+    const menu = el('div', 'st-menu-list');
+    menu.hidden = true;
+    composeLinks(emails).forEach(l => menu.appendChild(linkBtn(l, 'st-menu-item')));
+    menu.appendChild(copyBtn(emails, 'st-menu-item', 'Copy text'));
+    const set = open => { menu.hidden = !open; btn.setAttribute('aria-expanded', String(open)); };
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      document.querySelectorAll('.st-menu-list').forEach(m => { if (m !== menu) m.hidden = true; });
+      set(menu.hidden);
+    });
+    menu.addEventListener('click', () => set(false));
+    wrap.append(btn, menu);
+    return wrap;
+  }
+  document.addEventListener('click', () => document.querySelectorAll('.st-menu-list').forEach(m => { m.hidden = true; }));
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') document.querySelectorAll('.st-menu-list').forEach(m => { m.hidden = true; }); });
+
   async function copyText(text, okMsg) {
     try { await navigator.clipboard.writeText(text); showMsg(okMsg); }
     catch (e) { window.prompt('Copy this:', text); }
@@ -352,14 +391,10 @@
     const box = $('inviteResult');
     box.textContent = '';
     box.appendChild(el('b', null, emails.length === 1 ? emails[0] + ' can now join.' : emails.length + ' people can now join.'));
-    box.appendChild(el('p', null, 'Last step: send them the invitation. It has the link and step-by-step directions.'));
+    box.appendChild(el('p', null, 'Last step: send them the invitation. It has the link and step-by-step directions. Pick how you send email:'));
     const row = el('div', 'st-actions');
-    const mail = el('a', 'btn btn--primary', 'Email the invitation');
-    mail.href = mailtoFor(emails);
-    const cp = el('button', 'btn', 'Copy invitation text');
-    cp.type = 'button';
-    cp.addEventListener('click', () => copyText(inviteText(emails.length === 1 ? emails[0] : ''), 'Invitation copied. Paste it into an email or text.'));
-    row.append(mail, cp);
+    composeLinks(emails).forEach(l => row.appendChild(linkBtn(l, 'btn')));
+    row.appendChild(copyBtn(emails, 'btn', 'Copy text'));
     box.appendChild(row);
     box.hidden = false;
     box.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
