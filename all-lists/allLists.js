@@ -69,7 +69,10 @@ const ROOMS = [];
 const DEFAULT_FLOORS = [
   "Second Floor", 
   "First Floor", 
-  "Exterior"
+  "Exterior",
+  "Basement",
+  "Third Floor",
+  "Fourth Floor", 
 ];
 let FLOORS = DEFAULT_FLOORS.slice();
 // If a room points at a level that was deleted, fall back to the first level
