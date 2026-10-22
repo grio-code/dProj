@@ -100,6 +100,10 @@
       li.classList.toggle('is-current', i === idx);
     });
     $('wsSteps').classList.toggle('is-invitee', !!ctx.invited);
+    if (name === 'email' && ctx.invited) {
+      $('stepTitle').textContent = 'Join your team';
+      $('emailIntro').textContent = 'You\u2019ve been invited to a workspace on Integrate. Enter the email address your invitation was sent to, and we\u2019ll email you a link to confirm it.';
+    }
     const first = document.querySelector('.step[data-step="' + name + '"] input:not([type=file]), .step[data-step="' + name + '"] textarea');
     if (first) setTimeout(() => first.focus({ preventScroll: true }), 30);
   }
@@ -374,23 +378,45 @@
     if (list.length > MAX_INVITES) return setErr('iEmailsErr', 'Invite up to ' + MAX_INVITES + ' people at a time.');
     setErr('iEmailsErr', '');
 
-    const sent = [], failed = [];
-    await busy($('inviteBtn'), 'Sending\u2026', async () => {
+    // The invitation itself is sent by the owner from their own email (done screen). Firebase's sign-in-link
+    // emails are limited to 5 a day on the free plan, so we save those for each invitee's own confirmation email.
+    const added = [], failed = [];
+    await busy($('inviteBtn'), 'Adding\u2026', async () => {
       for (const em of list) {
         try {
           await db.doc('workspaces/' + ctx.wid + '/invites/' + em).set({
             email: em, invitedBy: ctx.user.uid, invitedByName: ctx.user.displayName || '', createdAt: TS()
           });
-        } catch (ex) { console.error(ex); failed.push(em); continue; }
-        try {
-          await auth.sendSignInLinkToEmail(em, { url: PAGE_URL + '?w=' + encodeURIComponent(ctx.wid), handleCodeInApp: true });
-          sent.push(em);
+          added.push(em);
         } catch (ex) { console.error(ex); failed.push(em); }
       }
     });
-    showDone(sent, failed);
+    showDone(added, failed);
   });
   $('skipInvite').addEventListener('click', () => showDone([], []));
+
+  // ================= Invitation message (sent from the owner's own email app) =================
+  function inviteText(email) {
+    const from = ctx.user.displayName || 'Your team';
+    const ws = ctx.workspaceName || 'our workspace';
+    return [
+      'Hi,', '',
+      from + ' invited you to join ' + ws + ' on Integrate.', '',
+      'To join:',
+      '1. Open this link: ' + PAGE_URL + '?w=' + encodeURIComponent(ctx.wid),
+      '2. Enter ' + (email ? 'this email address: ' + email : 'the email address this invitation was sent to') + ' (it has to match exactly).',
+      '3. We\u2019ll email you a confirmation link. Open it, then add your name and a password.', '',
+      'If the confirmation email doesn\u2019t show up in a few minutes, check your spam folder.', '',
+      'See you there,', from
+    ].join('\n');
+  }
+  function inviteMailto(emails) {
+    const one = emails.length === 1;
+    return 'mailto:' + (one ? encodeURIComponent(emails[0]) : '') + '?'
+      + (one ? '' : 'bcc=' + emails.map(encodeURIComponent).join(',') + '&')
+      + 'subject=' + encodeURIComponent('Join ' + (ctx.workspaceName || 'our workspace') + ' on Integrate')
+      + '&body=' + encodeURIComponent(inviteText(one ? emails[0] : ''));
+  }
 
   // ================= Done =================
   function showDone(sent, failed) {
@@ -398,10 +424,19 @@
       ? (ctx.workspaceName || 'Your workspace') + ' is ready.'
       : 'You\u2019ve joined ' + (ctx.workspaceName || 'the workspace') + '.';
     const parts = [];
-    if (sent.length) parts.push('Invitation sent to ' + sent.join(', ') + '.');
-    if (failed.length) parts.push('We couldn\u2019t email ' + failed.join(', ') + ' (they\u2019re still invited: share the link below).');
+    if (sent.length) parts.push((sent.length === 1 ? sent[0] + ' can' : sent.length + ' people can') + ' now join. Send them the invitation below: it has the link and step-by-step directions.');
+    if (failed.length) parts.push('Couldn\u2019t add ' + failed.join(', ') + '. You can invite them later from Settings.');
     $('doneInvites').textContent = parts.join(' ');
     $('doneInvites').hidden = !parts.length;
+    $('doneSend').hidden = !sent.length;
+    if (sent.length) {
+      $('doneMail').href = inviteMailto(sent);
+      $('doneCopy').onclick = async () => {
+        const text = inviteText(sent.length === 1 ? sent[0] : '');
+        try { await navigator.clipboard.writeText(text); showMsg('Invitation copied. Paste it into an email or text.', false); }
+        catch (e) { window.prompt('Copy this:', text); }
+      };
+    }
     $('linkRow').hidden = !ctx.isOwner;
     $('shareLink').value = PAGE_URL + '?w=' + encodeURIComponent(ctx.wid);
     showStep('done');

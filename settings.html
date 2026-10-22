@@ -177,18 +177,19 @@
           <div class="f">
             <label for="iEmails">Email addresses</label>
             <textarea id="iEmails" rows="3" placeholder="name@company.com, another@company.com"></textarea>
-            <span class="f-hint">Separate with commas or new lines. Each person gets an email with a link to join.</span>
+            <span class="f-hint">Separate with commas or new lines. Only these addresses will be able to join.</span>
             <span class="f-err" id="iEmailsErr"></span>
           </div>
           <div class="st-actions">
-            <button type="submit" class="btn btn--primary" id="inviteBtn">Send invites</button>
+            <button type="submit" class="btn btn--primary" id="inviteBtn">Invite</button>
           </div>
+          <div class="st-result" id="inviteResult" role="status" hidden></div>
         </form>
 
         <div class="st-block">
           <h3 class="st-sub">Invite link</h3>
           <div class="f">
-            <label for="shareLink">Anyone you've invited by email can also join with this link</label>
+            <label for="shareLink">Only people you've invited above can join with this link</label>
             <div class="st-copy">
               <input id="shareLink" readonly>
               <button type="button" class="btn" id="copyLink">Copy</button>

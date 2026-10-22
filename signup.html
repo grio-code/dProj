@@ -82,7 +82,7 @@
 
       <!-- STEP 1: Enter your email -->
       <section class="step" data-step="email">
-        <p>Use your work email so teammates can find you. We'll send you a link to confirm it.</p>
+        <p id="emailIntro">Use your work email so teammates can find you. We'll send you a link to confirm it.</p>
         <form class="login-form" id="emailForm" novalidate>
           <div class="f">
             <label for="wEmail">Email</label>
@@ -181,7 +181,7 @@
             <textarea id="iEmails" rows="4" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="sam@company.com, alex@company.com"></textarea>
             <div class="f-err" id="iEmailsErr" role="alert"></div>
           </div>
-          <button class="btn primary" type="submit" id="inviteBtn">Send invites</button>
+          <button class="btn primary" type="submit" id="inviteBtn">Invite</button>
           <div class="login-links"><button type="button" class="link" id="skipInvite">Skip for now</button></div>
         </form>
       </section>
@@ -190,6 +190,10 @@
       <section class="step" data-step="done" hidden>
         <p id="doneText"></p>
         <p class="f-hint" id="doneInvites" hidden></p>
+        <div id="doneSend" hidden><div style="display:grid;gap:8px;margin-bottom:14px">
+          <a class="btn primary" id="doneMail" href="#" style="text-decoration:none;display:flex;align-items:center;justify-content:center">Email the invitation</a>
+          <button type="button" class="btn" id="doneCopy">Copy invitation text</button>
+        </div></div>
         <div class="f" id="linkRow" hidden>
           <label for="shareLink">Invite link</label>
           <input id="shareLink" type="text" readonly>

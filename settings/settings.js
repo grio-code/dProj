@@ -184,6 +184,14 @@
       who.appendChild(el('span', null, 'Invited ' + fmtDate(i.createdAt) + (i.invitedByName ? ' by ' + i.invitedByName : '')));
       li.append(pic, who, el('span', 'role role--pending', 'Pending'));
       if (st.isOwner) {
+        const em = i.email || i.id;
+        const mail = el('a', 'btn btn--sm', 'Email invite');
+        mail.href = mailtoFor([em]);
+        mail.title = 'Opens your email app with the invitation written for you';
+        const cp = el('button', 'btn btn--sm', 'Copy invite');
+        cp.type = 'button';
+        cp.addEventListener('click', () => copyText(inviteText(em), 'Invitation for ' + em + ' copied. Paste it into an email or text.'));
+        li.append(mail, cp);
         const rv = el('button', 'btn btn--sm btn--quiet', 'Revoke');
         rv.type = 'button';
         rv.addEventListener('click', () => revokeInvite(i, rv));
@@ -271,6 +279,43 @@
   });
 
   // ---------- 4. Admin: invite people ----------
+  // The invitation is a message the owner sends from their own email (or text). We don't rely on Firebase's
+  // sign-in email for this: on the free Spark plan Firebase sends only 5 sign-in-link emails a day for the whole
+  // project, those emails don't mention the workspace, and they often land in spam. Saving the quota also means
+  // the invited person's own confirmation email (sent when they open the link and enter their address) goes out.
+  const inviteUrl = () => SIGNUP_URL + '?w=' + encodeURIComponent(st.wid);
+  const inviteSubject = () => 'Join ' + (st.ws.name || 'our workspace') + ' on Integrate';
+  function inviteText(email) {
+    const from = st.profile.name || st.user.displayName || 'Your team';
+    return [
+      'Hi,',
+      '',
+      from + ' invited you to join ' + (st.ws.name || 'our workspace') + ' on Integrate.',
+      '',
+      'To join:',
+      '1. Open this link: ' + inviteUrl(),
+      '2. Enter ' + (email ? 'this email address: ' + email : 'the email address this invitation was sent to') + ' (it has to match exactly).',
+      '3. We’ll email you a confirmation link. Open it, then add your name and a password.',
+      '',
+      'If the confirmation email doesn’t show up in a few minutes, check your spam folder.',
+      '',
+      'See you there,',
+      from
+    ].join('\n');
+  }
+  // One person: To. Several: Bcc, so invitees don't see each other's addresses.
+  function mailtoFor(emails) {
+    const one = emails.length === 1;
+    const q = (one ? '' : 'bcc=' + emails.map(encodeURIComponent).join(',') + '&')
+      + 'subject=' + encodeURIComponent(inviteSubject())
+      + '&body=' + encodeURIComponent(inviteText(one ? emails[0] : ''));
+    return 'mailto:' + (one ? encodeURIComponent(emails[0]) : '') + '?' + q;
+  }
+  async function copyText(text, okMsg) {
+    try { await navigator.clipboard.writeText(text); showMsg(okMsg); }
+    catch (e) { window.prompt('Copy this:', text); }
+  }
+
   $('inviteForm').addEventListener('submit', async e => {
     e.preventDefault();
     const taken = new Set(st.members.map(m => (m.email || '').toLowerCase()));
@@ -283,33 +328,44 @@
     if (list.length > MAX_INVITES) return setErr('iEmailsErr', 'Invite up to ' + MAX_INVITES + ' people at a time.');
     setErr('iEmailsErr', '');
 
-    const sent = [], failed = [];
-    await busy($('inviteBtn'), 'Sending…', async () => {
+    const added = [], failed = [];
+    await busy($('inviteBtn'), 'Adding…', async () => {
       for (const em of list) {
         try {
           await db.doc('workspaces/' + st.wid + '/invites/' + em).set({
-            email: em, invitedBy: st.user.uid, invitedByName: st.user.displayName || '', createdAt: TS()
+            email: em, invitedBy: st.user.uid, invitedByName: st.profile.name || st.user.displayName || '', createdAt: TS()
           });
-        } catch (ex) { console.error(ex); failed.push(em); continue; }
-        try {
-          await auth.sendSignInLinkToEmail(em, { url: SIGNUP_URL + '?w=' + encodeURIComponent(st.wid), handleCodeInApp: true });
-          sent.push(em);
+          added.push(em);
         } catch (ex) { console.error(ex); failed.push(em); }
       }
       await loadPeople();
     });
     renderAll();
+    if (failed.length) showMsg(friendly({ code: 'permission-denied' }, '') + ' Not added: ' + failed.join(', '), true);
+    if (!added.length) return;
     $('iEmails').value = '';
-    const parts = [];
-    if (sent.length) parts.push('Invitation sent to ' + sent.join(', ') + '.');
-    if (failed.length) parts.push('Couldn’t email ' + failed.join(', ') + '. Share the invite link with them instead.');
-    showMsg(parts.join(' '), !sent.length);
+    showInviteResult(added);
   });
 
-  $('copyLink').addEventListener('click', async () => {
-    try { await navigator.clipboard.writeText($('shareLink').value); showMsg('Invite link copied.'); }
-    catch (e) { $('shareLink').focus(); $('shareLink').select(); }
-  });
+  // After adding: the next step is sending the message, so put it right there
+  function showInviteResult(emails) {
+    const box = $('inviteResult');
+    box.textContent = '';
+    box.appendChild(el('b', null, emails.length === 1 ? emails[0] + ' can now join.' : emails.length + ' people can now join.'));
+    box.appendChild(el('p', null, 'Last step: send them the invitation. It has the link and step-by-step directions.'));
+    const row = el('div', 'st-actions');
+    const mail = el('a', 'btn btn--primary', 'Email the invitation');
+    mail.href = mailtoFor(emails);
+    const cp = el('button', 'btn', 'Copy invitation text');
+    cp.type = 'button';
+    cp.addEventListener('click', () => copyText(inviteText(emails.length === 1 ? emails[0] : ''), 'Invitation copied. Paste it into an email or text.'));
+    row.append(mail, cp);
+    box.appendChild(row);
+    box.hidden = false;
+    box.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }
+
+  $('copyLink').addEventListener('click', () => copyText($('shareLink').value, 'Invite link copied.'));
 
   // ---------- 3. Members: remove / revoke (owner) ----------
   async function removeMember(m, btn) {
