@@ -34,7 +34,7 @@
   if (links) center.appendChild(links);
   const hello = document.createElement('a');
   hello.className = 'fnav-hello';
-  hello.href = 'settings.html#user';
+  // hello.href = 'settings.html#user';
   hello.title = 'Your settings';
   center.appendChild(hello);
 
