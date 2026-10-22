@@ -1,7 +1,9 @@
 /* Create-a-workspace wizard. Uses the --lg-* colors from login.css and the theme variables from nav.css,
    so light and dark mode stay in step with the rest of the app. Load it AFTER login.css. */
 
-.step[hidden] { display: none; }
+.step[hidden] { 
+    display: none;
+}
 
 /* Progress bar: one segment per step */
 .ws-steps {
@@ -29,11 +31,17 @@
   transition: background .25s;
 }
 .ws-steps li.is-done::before,
-.ws-steps li.is-current::before { background: var(--accent); }
-.ws-steps li.is-current { color: var(--lg-text); }
+.ws-steps li.is-current::before { 
+    background: var(--accent); 
+}
+.ws-steps li.is-current { 
+    color: var(--lg-text); 
+}
 /* People joining an existing workspace skip these two steps */
 .ws-steps.is-invitee li[data-s="workspace"],
-.ws-steps.is-invitee li[data-s="invite"] { display: none; }
+.ws-steps.is-invitee li[data-s="invite"] { 
+    display: none; 
+}
 
 /* Hint and error text under fields */
 .f-hint {
@@ -48,9 +56,13 @@
   line-height: 1.4;
   color: var(--danger);
 }
-.f-err:empty { display: none; }
+.f-err:empty { 
+    display: none; 
+}
 .ws-form input[aria-invalid="true"],
-.ws-form textarea[aria-invalid="true"] { border-color: var(--danger); }
+.ws-form textarea[aria-invalid="true"] { 
+    border-color: var(--danger); 
+}
 .ws-form .lbl {
   font-family: "IBM Plex Mono", ui-monospace, monospace;
   font-size: 12px;
@@ -58,7 +70,10 @@
 }
 
 /* Fields outside a .login-form (the done screen) look the same as the form fields */
-.ws-form .f { display: grid; gap: 6px; }
+.ws-form .f { 
+    display: grid; 
+    gap: 6px; 
+}
 .ws-form label {
   font-family: "IBM Plex Mono", ui-monospace, monospace;
   font-size: 12px;

@@ -69,9 +69,10 @@
   left: 50%; 
   transform: translateX(-50%);
   width: min(1120px, calc(100% - 32px));
-  display: flex; 
-  align-items: center; 
-  justify-content: space-between; 
+  /* Three columns: brand on the left, greeting in the true middle, buttons on the right */
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
   gap: 16px;
   padding: 8px 8px 8px 16px;
   background: var(--sheet);
@@ -379,27 +380,41 @@ html.signed-in .fnav-guest { display: none; }
 .fnav-out { display: none; }
 html.signed-in .fnav-out { display: inline-flex; }
 
-/* "Integrate" with the greeting underneath */
+/* Left: "Integrate" with the workspace (company logo + name) underneath */
 .fnav-left { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-width: 0; }
+.fnav-actions { justify-self: end; }
+.fnav-ws,
 .fnav-hello {
   display: none;
   align-items: center;
-  gap: 6px;
-  max-width: 220px;
-  font: 500 12px var(--f-mono);
+  gap: 7px;
+  min-width: 0;
+  max-width: 100%;
+  padding: 2px 6px 2px 2px;
+  margin-left: -2px;
+  border-radius: 6px;
   color: var(--muted);
+  text-decoration: none;
+  transition: background .2s, color .2s;
 }
+.fnav-ws:hover, .fnav-hello:hover { background: var(--bg); color: var(--ink); }
+html.signed-in .fnav-ws:not([hidden]),
 html.signed-in .fnav-hello { display: flex; }
-.fnav-hello img,
-.fnav-av {
-  flex: none;
-  width: 22px;
-  height: 22px;
-  border-radius: 4px;
-}
-.fnav-hello img { object-fit: contain; background: var(--bg); border: 1px solid var(--rule); }
-.fnav-av { display: grid; place-items: center; background: var(--accent); color: var(--accent-ink); font-weight: 600; font-size: 11px; }
-.fnav-hello-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fnav-ws { font: 500 12px var(--f-mono); letter-spacing: .02em; }
+.fnav-ws-name, .fnav-hello-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Middle: page links (when there are any) and "[photo] Hello, Name" on one line */
+.fnav-center { display: flex; align-items: center; justify-content: center; gap: 12px; min-width: 0; }
+.fnav-links:not(:has(a)) { display: none; }   /* no links yet: don't draw an empty box */
+.fnav-hello { max-width: 260px; font: 500 14px var(--f-body); color: var(--ink); }
+
+/* Workspace logo is a rounded square (a company mark); the person's photo is a circle */
+.fnav-ws-logo, .fnav-av { flex: none; object-fit: contain; }
+.fnav-ws-logo { width: 22px; height: 22px; border-radius: 5px; background: var(--bg); border: 1px solid var(--rule); }
+.fnav-av { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; border: 1px solid var(--rule); }
+.fnav-letter { display: grid; place-items: center; font: 600 11px var(--f-body); border: 0; }
+.fnav-ws-logo.fnav-letter { background: var(--ink); color: var(--bg); }
+.fnav-av.fnav-letter { background: var(--accent); color: var(--accent-ink); font-size: 12px; }
 
 
 /* ---------- Responsiveness ---------- */
@@ -413,6 +428,9 @@ html.signed-in .fnav-hello { display: flex; }
   .fnav-btn--ghost { 
     display: none; 
   }
+  .fnav { gap: 10px; }
+  .fnav-hello-text { display: none; }   /* phones: just the photo in the middle */
+  .fnav-hello { padding: 2px; }
 }
 @media (max-width: 420px) {
   .dock-items a { 

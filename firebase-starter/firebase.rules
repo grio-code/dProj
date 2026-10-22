@@ -16,6 +16,8 @@ service cloud.firestore {
         && exists(/databases/$(database)/documents/workspaces/$(wid)/invites/$(request.auth.token.email.lower()));
     }
     function validName(n) { return n is string && n.size() > 0 && n.size() <= 50; }
+    // Company logo: optional, a small image data URL (settings.html shrinks it to 256px)
+    function validLogo(d) { return !('logo' in d) || d.logo == null || (d.logo is string && d.logo.size() < 400000); }
 
     // ---------- workspaces ----------
     match /workspaces/{wid} {
@@ -24,7 +26,8 @@ service cloud.firestore {
       allow get: if signedIn() && (resource.data.ownerId == request.auth.uid || isMember(wid) || isInvited(wid));
       allow update: if signedIn() && resource.data.ownerId == request.auth.uid
                     && request.resource.data.ownerId == resource.data.ownerId
-                    && validName(request.resource.data.name);
+                    && validName(request.resource.data.name)
+                    && validLogo(request.resource.data);
 
       // The people in the workspace
       match /members/{memberId} {
