@@ -1,0 +1,85 @@
+body { margin: 0; background: #0d1820; font-family: var(--f-body); }
+
+  /* ---------- Hero: a drifting gradient (blueprint blue, hi-vis amber, safety orange, teal) over a faint blueprint grid ---------- */
+  .hero {
+    position: relative; isolation: isolate; overflow: hidden;
+    min-height: 100vh; min-height: 100svh;
+    display: flex; align-items: center;
+    padding: calc(var(--nav-h, 80px) + 56px) clamp(20px, 6vw, 88px) 120px;
+    color: #fff; background: #0d1820;
+  }
+  .glow { position: absolute; z-index: -3; border-radius: 50%; will-change: transform; }
+  .g1 { width: 70vmax; height: 70vmax; left: -25vmax; top: -30vmax; background: radial-gradient(circle, #2d6aa0 0%, transparent 62%); animation: drift1 26s ease-in-out infinite alternate; }
+  .g2 { width: 70vmax; height: 70vmax; right: -30vmax; bottom: -35vmax; background: radial-gradient(circle, #f0b232 0%, transparent 60%); animation: drift2 30s ease-in-out infinite alternate; }
+  .g3 { width: 50vmax; height: 50vmax; right: 5vmax; top: -20vmax; opacity: .6; background: radial-gradient(circle, #e8641f 0%, transparent 60%); animation: drift3 22s ease-in-out infinite alternate; }
+  .g4 { width: 55vmax; height: 55vmax; left: 15vmax; bottom: -30vmax; opacity: .7; background: radial-gradient(circle, #1f8f8a 0%, transparent 60%); animation: drift4 34s ease-in-out infinite alternate; }
+  @keyframes drift1 { to { transform: translate(35vmax, 25vmax) scale(1.15); } }
+  @keyframes drift2 { to { transform: translate(-40vmax, -18vmax) scale(.9); } }
+  @keyframes drift3 { to { transform: translate(-30vmax, 28vmax) scale(1.2); } }
+  @keyframes drift4 { to { transform: translate(30vmax, -22vmax) scale(1.1); } }
+  .grid {
+    position: absolute; inset: 0; z-index: -2;
+    background-image: linear-gradient(rgba(255,255,255,.07) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.07) 1px, transparent 1px);
+    background-size: 56px 56px;
+    -webkit-mask-image: radial-gradient(ellipse at 30% 40%, #000 0%, transparent 75%);
+    mask-image: radial-gradient(ellipse at 30% 40%, #000 0%, transparent 75%);
+  }
+
+  /* ---------- Words ---------- */
+  .copy { position: relative; z-index: 3; max-width: 620px; }
+  .copy h1 {
+    margin: 0 0 20px;
+    font: 700 clamp(52px, 9.5vw, 116px)/.92 var(--f-display);
+    letter-spacing: -.01em; text-wrap: balance;
+    text-shadow: 0 2px 24px rgba(0,0,0,.25);
+  }
+  .copy p { margin: 0 0 32px; max-width: 34em; font: 400 clamp(17px, 2vw, 20px)/1.5 var(--f-body); color: rgba(255,255,255,.85); }
+  .cta-row { display: flex; flex-wrap: wrap; gap: 12px; }
+  .cta {
+    display: inline-flex; align-items: center; min-height: 52px; padding: 0 24px;
+    border-radius: 8px; border: 2px solid transparent;
+    font: 600 16px var(--f-body); text-decoration: none;
+    transition: transform .2s, background .2s, border-color .2s;
+  }
+  .cta:hover { transform: translateY(-2px); }
+  .cta:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+  .cta--main { background: #f0b232; color: #231800; }
+  .cta--main:hover { background: #ffc54d; }
+  .cta--alt { color: #fff; border-color: rgba(255,255,255,.55); }
+  .cta--alt:hover { border-color: #fff; background: rgba(255,255,255,.08); }
+  .cta-user { display: none; }
+  html.signed-in .cta-guest { display: none; }
+  html.signed-in .cta-user { display: inline-flex; }
+
+  /* ---------- Floating tools ---------- */
+  .tools { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
+  .tool {
+    position: absolute; left: calc(var(--x) * 1%); top: calc(var(--y) * 1%);
+    width: calc(var(--s) * 1px); aspect-ratio: 1;
+    margin: calc(var(--s) * -.5px) 0 0 calc(var(--s) * -.5px);
+    transform: translate(calc(var(--mx, 0) * var(--depth) * 1px), calc(var(--my, 0) * var(--depth) * 1px));
+    transition: transform .5s ease-out;
+  }
+  .tool-in { width: 100%; height: 100%; animation: drop .9s cubic-bezier(.2, 1.4, .4, 1) var(--in) backwards; }
+  .tool svg {
+    width: 100%; height: 100%; overflow: visible;
+    fill: none; stroke: #0d1820; stroke-width: 3; stroke-linejoin: round; stroke-linecap: round;
+    filter: drop-shadow(0 16px 14px rgba(0,0,0,.35));
+    transform: rotate(var(--r));
+    animation: bob var(--d) ease-in-out var(--delay) infinite alternate;
+  }
+  @keyframes drop { from { opacity: 0; transform: translateY(-60px) scale(.5) rotate(-20deg); } }
+  @keyframes bob { from { transform: translateY(0) rotate(var(--r)); } to { transform: translateY(-18px) rotate(calc(var(--r) + 7deg)); } }
+
+  @media (max-width: 760px) {
+    .hero { align-items: flex-start; padding-top: calc(var(--nav-h, 80px) + 36px); padding-bottom: 40px; }
+    .tool {
+      left: calc((var(--x) - 48) * 2%); top: calc(52% + var(--y) * .46%);
+      width: calc(var(--s) * .6px); margin: calc(var(--s) * -.3px) 0 0 calc(var(--s) * -.3px);
+    }
+    .tool.l { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .glow, .tool-in, .tool svg { animation: none; }
+    .tool, .cta { transition: none; }
+  }

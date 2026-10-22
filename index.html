@@ -2,127 +2,161 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<!-- viewport-fit=cover lets the page draw edge to edge on iPhones with a notch; safe-area padding is handled in CSS below -->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Integrate</title>
-<!-- iOS "Add to Home Screen" settings: makes it open full screen like a native app -->
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Integrate">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-
-<!-- Browser toolbar color, matched to light and dark mode backgrounds -->
-<meta name="theme-color" content="#eceeea" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#151a19" media="(prefers-color-scheme: dark)">
-
-<!-- PWA manifest and icons used when the app is installed to a home screen -->
+<meta name="theme-color" content="#0d1820">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" href="icon-192.png">
-
-<!-- Google Fonts: Barlow Condensed (headings), IBM Plex Mono (labels), IBM Plex Sans (body) -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 
 <link href="nav-bar/nav.css" rel="stylesheet">
-<script src="nav-bar/nav.js" defer></script>
-<link href="all-lists/list.css" rel="stylesheet">
+<link href="home/index.css" rel="stylesheet">
 
+<!-- Firebase (compat build) + settings, so the top bar knows whether someone is signed in -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="firebase-starter/firebase-config.js"></script>
-
 <script src="nav-bar/nav.js" defer></script>
 <script src="nav-bar/auth-ui.js" defer></script>
 
+
 </head>
 <body>
-<!-- Navigation -->
-<!-- Goo filter for the dock (include once) -->
+
+<!-- The tools. Outlines come from the page; the two fill colors come from each tool's --f1 and --f2 -->
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
-  <filter id="fn-goo">
-    <feGaussianBlur in="SourceGraphic" stdDeviation="8" result="b"/>
-    <feColorMatrix in="b" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 22 -10" result="g"/>
-    <feComposite in="SourceGraphic" in2="g" operator="atop"/>
-  </filter>
+  <defs>
+    <symbol id="t-clip" viewBox="0 0 64 64">
+      <rect x="11" y="9" width="42" height="51" rx="7" fill="var(--f1)"/>
+      <rect x="21" y="3" width="22" height="13" rx="5" fill="var(--f2)"/>
+      <path d="M19 29l4 4 8-9M19 45l4 4 8-9M38 29h8M38 45h8"/>
+    </symbol>
+    <symbol id="t-hat" viewBox="0 0 64 64">
+      <path d="M8 42a24 24 0 0 1 48 0z" fill="var(--f1)"/>
+      <rect x="27" y="13" width="10" height="29" rx="3" fill="var(--f2)"/>
+      <rect x="3" y="42" width="58" height="9" rx="4.5" fill="var(--f2)"/>
+    </symbol>
+    <symbol id="t-hammer" viewBox="0 0 64 64">
+      <rect x="26" y="22" width="12" height="38" rx="5" fill="var(--f2)"/>
+      <path d="M10 10h38a5 5 0 0 1 5 5v8H10c-4 0-6-3-6-6s2-7 6-7z" fill="var(--f1)"/>
+      <path d="M20 10v13"/>
+    </symbol>
+    <symbol id="t-level" viewBox="0 0 64 64">
+      <rect x="3" y="21" width="58" height="22" rx="5" fill="var(--f1)"/>
+      <rect x="23" y="27" width="18" height="10" rx="5" fill="var(--f2)"/>
+      <circle cx="32" cy="32" r="2.6" fill="var(--f1)"/>
+      <path d="M12 27v10M52 27v10"/>
+    </symbol>
+    <symbol id="t-wrench" viewBox="0 0 64 64">
+      <path d="M22 6h6v10h8V6h6v14c0 5-2 9-6 10v24a4 4 0 0 1-8 0V30c-4-1-6-5-6-10z" fill="var(--f1)"/>
+      <circle cx="32" cy="52" r="2" fill="var(--f2)"/>
+    </symbol>
+    <symbol id="t-roller" viewBox="0 0 64 64">
+      <rect x="6" y="8" width="42" height="17" rx="6" fill="var(--f1)"/>
+      <path d="M48 16.5h6a3 3 0 0 1 3 3V32H30v6"/>
+      <rect x="25" y="38" width="10" height="21" rx="4" fill="var(--f2)"/>
+    </symbol>
+    <symbol id="t-pencil" viewBox="0 0 64 64">
+      <path d="M9 55l3-13L42 12l10 10-30 30z" fill="var(--f1)"/>
+      <path d="M42 12l6-6 10 10-6 6z" fill="var(--f2)"/>
+      <path d="M9 55l3-13 10 10z" fill="var(--f2)"/>
+    </symbol>
+    <symbol id="t-tape" viewBox="0 0 64 64">
+      <rect x="6" y="14" width="42" height="38" rx="9" fill="var(--f1)"/>
+      <circle cx="27" cy="33" r="10" fill="var(--f2)"/>
+      <circle cx="27" cy="33" r="3" fill="var(--f1)"/>
+      <path d="M48 40h12v7H48z" fill="var(--f2)"/>
+      <path d="M53 40v3M57 40v3"/>
+    </symbol>
+  </defs>
 </svg>
 
 <!-- Top bar -->
 <header class="fnav" id="fnav">
-  <a class="fnav-brand" href="index.html">
-    <!-- <span class="fnav-mark"><svg class="fn-icon" viewBox="0 0 24 24" style="width:14px;height:14px;stroke:#fff;stroke-width:2.4"><path d="M9 6l6 6-6 6"/></svg></span> -->
-    <!-- LOGO/NAME -->
-    Integrate
-  </a>
-  <nav class="fnav-links" id="fnavLinks" aria-label="Primary">
-    <span class="fnav-pill" aria-hidden="true"></span>
-    <!-- <a href="index.html" aria-current="page">Home</a>
-    <a href="calendar.html">Calender</a>
-    <a href="lists/allLists.html">Lists</a>
-    <a href="dailyLogs.html">Daily Logs</a> -->
-  </nav>
+  <a class="fnav-brand" href="index.html">Integrate</a>
+  <nav class="fnav-links" id="fnavLinks" aria-label="Primary"><span class="fnav-pill" aria-hidden="true"></span></nav>
   <div class="fnav-actions">
-    <!-- <a class="fnav-btn fnav-btn--ghost" href="login">Login</a>
-    <a class="fnav-btn fnav-btn--primary" href="signup">Sign up</a> -->
     <a class="fnav-btn" href="login.html">Login</a>
     <a class="fnav-btn" href="signup.html">Sign up</a>
   </div>
 </header>
 
-<!-- Bottom dock -->
+<!-- Bottom dock (shows once someone is signed in) -->
 <nav class="dock" id="dock" aria-label="Quick navigation">
   <div class="dock-shape" aria-hidden="true"><span class="dock-bar"></span><span class="dock-blob"></span></div>
   <div class="dock-items">
-    <!-- Home -->
     <a href="index.html" aria-current="page" aria-label="Home">
       <svg class="fn-icon" viewBox="0 0 24 24"><path d="M4 11.2 12 4l8 7.2"/><path d="M6 9.8v9.7h12V9.8"/><path d="M10 19.5v-5h4v5"/></svg>
       <span class="dock-tip">Home</span>
     </a>
-    <!-- Calendar -->
-    <!-- <a href="calendar.html" aria-label="Calendar">
-      <svg class="fn-icon" viewBox="0 0 24 24"><rect x="4" y="5.5" width="16" height="14.5" rx="3"/><path d="M8 3.5v4M16 3.5v4M4 10.5h16"/></svg>
-      <span class="dock-tip">Calendar</span>
-    </a> -->
-
-    <!-- Lists -->
     <a href="allLists.html" aria-label="Lists">
       <svg class="fn-icon" viewBox="0 0 24 24"><circle cx="5" cy="6.5" r="1.1"/><circle cx="5" cy="12" r="1.1"/><circle cx="5" cy="17.5" r="1.1"/><path d="M9.5 6.5H20M9.5 12H20M9.5 17.5H20"/></svg>
       <span class="dock-tip">My Lists</span>
     </a>
-
-    <!-- Daily Logs -->
-    <!-- <a href="dailyLogs.html" aria-label="Daily Logs">
-      <svg class="fn-icon" viewBox="0 0 24 24"><rect x="5" y="3.5" width="14" height="17" rx="2.5"/><path d="M9 3.5v17M12.5 8.5H16M12.5 12H16"/></svg>
-      <span class="dock-tip">Daily Logs</span>
-    </a> -->
-
-    <!-- Messages -->
-    <!-- <a href="/messages.html" aria-label="Messages">
-      <svg class="fn-icon" viewBox="0 0 24 24"><path d="M20 12a8 8 0 0 1-11.6 7.1L4 20l.9-4.4A8 8 0 1 1 20 12z"/><path d="M9 11h6M9 14h4"/></svg>
-      <span class="dock-tip">Messages</span>
-    </a> -->
-
     <button class="dock-fab" id="dockFab" aria-label="Create" aria-expanded="false" aria-controls="dockMenu">
       <svg class="fn-icon" viewBox="0 0 24 24" style="stroke-width:2"><path d="M12 5v14M5 12h14"/></svg>
     </button>
   </div>
   <div class="dock-menu" id="dockMenu" role="menu">
-    <!-- <button role="menuitem">New Event</button> -->
     <button role="menuitem" onclick="location.href='allLists.html?new=1'">New List</button>
-    <!-- <button role="menuitem" onclick="location.href='dailyLogs.html?new=1'">New Daily Log</button> -->
   </div>
 </nav>
+
+<main class="hero" id="hero">
+  <div class="glow g1"></div><div class="glow g2"></div><div class="glow g3"></div><div class="glow g4"></div>
+  <div class="grid"></div>
+
+  <div class="copy">
+    <h1>Construction management, all in one place.</h1>
+    <p>Manage punch lists, daily logs, schedules, files, selections, and team messages from one simple platform. Built by builders, for builders, to keep your entire crew on the same page.</p>
+    <div class="cta-row">
+      <a class="cta cta--main cta-guest" href="signup.html">Create a workspace</a>
+      <a class="cta cta--alt cta-guest" href="login.html">Log in</a>
+      <a class="cta cta--main cta-user" href="allLists.html">Open my lists</a>
+    </div>
+  </div>
+
+  <!-- --x / --y = position in %, --s = size in px, --r = tilt, --d / --delay = float speed, --in = drop-in delay, --depth = mouse parallax -->
+  <div class="tools" aria-hidden="true">
+    <div class="tool" style="--x:74;--y:30;--s:150;--r:-6deg;--d:5.5s;--delay:-1s;--in:.15s;--depth:26;--f1:#f4f6f2;--f2:#f0b232"><div class="tool-in"><svg viewBox="0 0 64 64"><use href="#t-clip"/></svg></div></div>
+    <div class="tool" style="--x:58;--y:60;--s:128;--r:8deg;--d:6.2s;--delay:-3s;--in:.3s;--depth:18;--f1:#f0b232;--f2:#f4f6f2"><div class="tool-in"><svg viewBox="0 0 64 64"><use href="#t-hat"/></svg></div></div>
+    <div class="tool" style="--x:88;--y:58;--s:118;--r:28deg;--d:4.8s;--delay:-2s;--in:.45s;--depth:32;--f1:#9fb4c7;--f2:#e8641f"><div class="tool-in"><svg viewBox="0 0 64 64"><use href="#t-hammer"/></svg></div></div>
+    <div class="tool" style="--x:66;--y:86;--s:170;--r:-12deg;--d:7s;--delay:-4s;--in:.6s;--depth:14;--f1:#f0b232;--f2:#f4f6f2"><div class="tool-in"><svg viewBox="0 0 64 64"><use href="#t-level"/></svg></div></div>
+    <div class="tool" style="--x:92;--y:18;--s:100;--r:-30deg;--d:5.2s;--delay:-.5s;--in:.75s;--depth:36;--f1:#9fb4c7;--f2:#f0b232"><div class="tool-in"><svg viewBox="0 0 64 64"><use href="#t-wrench"/></svg></div></div>
+    <div class="tool" style="--x:90;--y:82;--s:100;--r:-18deg;--d:6.6s;--delay:-5s;--in:.9s;--depth:22;--f1:#e8641f;--f2:#f0b232"><div class="tool-in"><svg viewBox="0 0 64 64"><use href="#t-roller"/></svg></div></div>
+    <div class="tool l" style="--x:8;--y:14;--s:76;--r:40deg;--d:5.8s;--delay:-2.5s;--in:1.05s;--depth:30;--f1:#f0b232;--f2:#e8641f"><div class="tool-in"><svg viewBox="0 0 64 64"><use href="#t-pencil"/></svg></div></div>
+    <div class="tool l" style="--x:4;--y:80;--s:92;--r:-16deg;--d:6.4s;--delay:-3.5s;--in:1.2s;--depth:24;--f1:#f0b232;--f2:#f4f6f2"><div class="tool-in"><svg viewBox="0 0 64 64"><use href="#t-tape"/></svg></div></div>
+  </div>
+</main>
+
+<script>
+  // Keep the page content clear of the fixed top bar
+  function setNavH() {
+    const n = document.getElementById("fnav");
+    if (n) document.documentElement.style.setProperty("--nav-h", n.offsetHeight + "px");
+  }
+  setNavH();
+  window.addEventListener("resize", setNavH);
+  window.addEventListener("load", setNavH);
+
+  // The tools drift a little with the mouse (skipped on touch screens and when reduced motion is on)
+  (() => {
+    const hero = document.getElementById("hero");
+    if (!matchMedia("(hover: hover)").matches || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    hero.addEventListener("pointermove", e => {
+      const r = hero.getBoundingClientRect();
+      hero.style.setProperty("--mx", ((e.clientX - r.left) / r.width - .5) * 2);
+      hero.style.setProperty("--my", ((e.clientY - r.top) / r.height - .5) * 2);
+    });
+    hero.addEventListener("pointerleave", () => { hero.style.setProperty("--mx", 0); hero.style.setProperty("--my", 0); });
+  })();
+</script>
 </body>
 </html>
-
-<!-- <script>
-  // Keep the page content clear of the fixed top bar
-function setNavH() {
-  const n = document.getElementById("fnav");
-  if (n) document.documentElement.style.setProperty("--nav-h", n.offsetHeight + "px");
-}
-setNavH();
-window.addEventListener("resize", setNavH);
-window.addEventListener("load", setNavH);
-</script> -->
