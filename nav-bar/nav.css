@@ -486,3 +486,41 @@ html.signed-in .fnav-hello { display: flex; }
 
 /* Keep Login / Sign up in the right-hand column even when the middle (page links) is empty */
 .fnav-actions { grid-column: 3; }
+
+/* ---------- Glass bottom dock ----------
+   Same frosted glass as the top bar. The amber + button keeps its color.
+   The "goo" filter that used to melt the bar and the + button together is switched off,
+   because a filter stops the glass from blurring what's behind it. The + button now sits
+   just beside the glass pill as its own circle. */
+.dock {
+  --bg: #fff;                           /* icon color */
+  --ink: #fff;
+  --sheet: rgba(18, 24, 23, .85);       /* create menu */
+  --rule: rgba(255, 255, 255, .16);
+  --chip: rgba(141, 184, 222, .16);
+  --chip-ink: #8db8de;
+  --focus: #fff;
+  color-scheme: dark;
+}
+.dock-shape { filter: none; }
+.dock-bar {
+  right: 82px;
+  background: rgba(255, 255, 255, .07);
+  border: 1px solid rgba(255, 255, 255, .14);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+  backdrop-filter: blur(18px) saturate(160%);
+  box-shadow: 0 10px 30px -12px rgba(0, 0, 0, .55), inset 0 1px 0 rgba(255, 255, 255, .08);
+}
+.dock-blob { box-shadow: 0 10px 24px -8px rgba(0, 0, 0, .6); }
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .dock-bar { background: rgba(14, 18, 17, .92); }
+}
+@media (max-width: 420px) { .dock-bar { right: 82px; } }
+
+/* Hover labels and the create menu: dark glass with white text */
+.dock-tip { background: rgba(18, 24, 23, .9); color: #fff; border: 1px solid rgba(255, 255, 255, .14); }
+.dock-menu {
+  border-color: rgba(255, 255, 255, .14);
+  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(18px);
+}
