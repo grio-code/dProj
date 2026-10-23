@@ -1,4 +1,4 @@
-body { margin: 0; background: #0d1820; font-family: var(--f-body); }
+body { margin: 0; background: #000000; font-family: var(--f-body); }
 
   /* ---------- Hero: a drifting gradient (blueprint blue, hi-vis amber, safety orange, teal) over a faint blueprint grid ---------- */
   .hero {
@@ -6,7 +6,7 @@ body { margin: 0; background: #0d1820; font-family: var(--f-body); }
     min-height: 100vh; min-height: 100svh;
     display: flex; align-items: center;
     padding: calc(var(--nav-h, 80px) + 56px) clamp(20px, 6vw, 88px) 120px;
-    color: #fff; background: #0d1820;
+    color: #fff; background: #000000;
   }
   .glow { position: absolute; z-index: -3; border-radius: 50%; will-change: transform; }
   .g1 { width: 70vmax; height: 70vmax; left: -25vmax; top: -30vmax; background: radial-gradient(circle, #2d6aa0 0%, transparent 62%); animation: drift1 26s ease-in-out infinite alternate; }
@@ -19,7 +19,7 @@ body { margin: 0; background: #0d1820; font-family: var(--f-body); }
   @keyframes drift4 { to { transform: translate(30vmax, -22vmax) scale(1.1); } }
   .grid {
     position: absolute; inset: 0; z-index: -2;
-    background-image: linear-gradient(rgba(255,255,255,.07) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.07) 1px, transparent 1px);
+    background-image: linear-gradient(rgba(255,255,255,.10) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.10) 1px, transparent 1px);
     background-size: 56px 56px;
     -webkit-mask-image: radial-gradient(ellipse at 30% 40%, #000 0%, transparent 75%);
     mask-image: radial-gradient(ellipse at 30% 40%, #000 0%, transparent 75%);
@@ -63,7 +63,7 @@ body { margin: 0; background: #0d1820; font-family: var(--f-body); }
   .tool-in { width: 100%; height: 100%; animation: drop .9s cubic-bezier(.2, 1.4, .4, 1) var(--in) backwards; }
   .tool svg {
     width: 100%; height: 100%; overflow: visible;
-    fill: none; stroke: #0d1820; stroke-width: 3; stroke-linejoin: round; stroke-linecap: round;
+    fill: none; stroke: #464646; stroke-width: 3; stroke-linejoin: round; stroke-linecap: round;
     filter: drop-shadow(0 16px 14px rgba(0,0,0,.35));
     transform: rotate(var(--r));
     animation: bob var(--d) ease-in-out var(--delay) infinite alternate;
