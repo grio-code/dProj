@@ -167,7 +167,8 @@ const ui = {
   editRoom: null, 
   openFolders: {}, 
   renameFolder: null, 
-  confirmFolder: null 
+  confirmFolder: null, 
+  archiveFolder: null // ADDED: folder awaiting archive-confirmation
 };
 let jobsList = {};     // all jobs, for the home screen
 // ADDED: all folders, as { folderId: { name, createdAt } }. Folders are stored inside the same "settings/app" record as trades and levels
@@ -190,11 +191,12 @@ const drag = {
 };
 let dragEndedAt = 0; // when the last drag ended, used to ignore the click that browsers fire after a drag
 // ADDED: folders as [id, folder] pairs sorted A to Z by name
-const sortedFolders = () => Object.entries(foldersList).sort((a, b) => (a[1].name || "").localeCompare(b[1].name || "", undefined, { 
+const sortedFolders = () => Object.entries(foldersList).filter(([, f]) => !f.archived).sort( // CHANGED: archived folders are hidden (they live in Settings > Archive)
+  (a, b) => (a[1].name || "").localeCompare(b[1].name || "", undefined, { 
   sensitivity: "base" 
 }));
 // ADDED: folders inside folders. Each folder can have a parentId (the folder it sits in). No parentId, or a parent that was deleted, means it's at the top.
-const parentOf = fid => { const p = foldersList[fid] && foldersList[fid].parentId; return p && foldersList[p] && p !== fid ? p : ""; };
+const parentOf = fid => { const p = foldersList[fid] && foldersList[fid].parentId; return p && foldersList[p] && !foldersList[p].archived && p !== fid ? p : ""; }; // CHANGED: a parent that is archived counts as missing
 // The folders directly inside folder pid ("" = the top level), A to Z
 const childFolders = pid => sortedFolders().filter(([id]) => parentOf(id) === pid);
 // Is folder a the same as, or somewhere inside, folder b? Used so a folder can't be dropped into itself or into one of its own sub-folders.
@@ -518,11 +520,20 @@ function jobRow(id, j) {
   const pill = typeof j.openCount === "number" && j.totalCount ? (j.openCount ? `<span class="pill">${j.openCount} open</span>` : `<span class="pill clear">Clear</span>`) : `<span class="pill none">No items</span>`;
   return `<li><a href="?job=${encodeURIComponent(id)}" data-job="${esc(id)}" draggable="false"><span class="j-main"><span class="j-title">${esc(title)}</span>${sub ? `<span class="j-sub">${esc(sub)}</span>` : ""}</span>${pill}</a></li>`;
 }
+// ADDED: the box that asks "Archive this folder?" and says what is inside it
+function archiveConfirmHtml(fid, fo) {
+  const t = folderTree(fid), subs = t.filter(id => id !== fid && !foldersList[id].archived).length; // folders already archived on their own aren't counted
+  const lists = Object.values(jobsList).filter(j => !j.archived && t.includes(j.folderId)).length;
+  const what = [subs && subs + (subs === 1 ? " folder" : " folders"), lists + (lists === 1 ? " list" : " lists")].filter(Boolean).join(" and ");
+  return `<div class="confirm">Archive the folder ${esc(fo.name)}, along with the ${what} inside it? They move to Settings, under Archive, where you can unarchive or delete them.
+    <div class="acts"><button type="button" class="btn" data-fcancel>Cancel</button><button type="button" class="btn primary" data-farchive="${esc(fid)}">Archive folder</button></div></div>`;
+}
 function renderJobs() {
   // ADDED: don't redraw the list while a list is being dragged (the floating copy and highlights would be wiped). It redraws when the drag ends.
   if (drag.active) { drag.rerender = true; return; }
   // Newest first
-  const rows = Object.entries(jobsList).sort((a, b) => (b[1].createdAt || "").localeCompare(a[1].createdAt || ""));
+  const rows = Object.entries(jobsList).filter(([, j]) => !j.archived).sort( // CHANGED: archived lists are hidden (they live in Settings > Archive)
+    (a, b) => (b[1].createdAt || "").localeCompare(a[1].createdAt || ""));
   // ADDED: remember what was typed in a folder rename box and which field had focus, because the whole list is rebuilt below
   const focusId = document.activeElement && document.activeElement.id;
   const keep = {};
@@ -548,13 +559,14 @@ function renderJobs() {
         <ul class="jobs" style="margin:0;padding:12px 14px">${subs.map(([sid, so]) => folderHtml(sid, so)).join("")}${n ? inside.map(([id, j]) => jobRow(id, j)).join("") : subs.length ? "" : `<li class="empty" style="padding:0">No lists in this folder yet.</li>`}</ul>
         ${!canEdit ? "" : ui.confirmFolder === fid ? `<div class="confirm">Delete the folder ${esc(fo.name)}? The lists and folders inside are not deleted. They move up to ${foldersList[parentOf(fid)] ? esc(foldersList[parentOf(fid)].name) : "the main list"}.
             <div class="acts"><button type="button" class="btn" data-fcancel>Keep it</button><button type="button" class="btn danger" data-fdel="${esc(fid)}">Delete folder</button></div></div>`
-          : `<div class="room-foot" style="gap:16px"><button type="button" class="link" data-fnew="${esc(fid)}">New list here</button><button type="button" class="link" data-frename="${esc(fid)}">Rename</button><button type="button" class="link muted" data-fask="${esc(fid)}">Delete folder</button></div>`}
+          : ui.archiveFolder === fid ? archiveConfirmHtml(fid, fo)
+          : `<div class="room-foot" style="gap:16px"><button type="button" class="link" data-fnew="${esc(fid)}">New list here</button><button type="button" class="link" data-frename="${esc(fid)}">Rename</button><button type="button" class="link" data-farchask="${esc(fid)}">Archive</button><button type="button" class="link muted" data-fask="${esc(fid)}">Delete folder</button></div>`}
       </div>` : ""}
     </section></li>`;
   }
   childFolders("").forEach(([fid, fo]) => { html += folderHtml(fid, fo); }); // top-level folders; each one draws its own sub-folders
   // ADDED: lists that are not in any folder (or whose folder was deleted) show below the folders
-  const loose = rows.filter(([, j]) => !j.folderId || !foldersList[j.folderId]);
+  const loose = rows.filter(([, j]) => !j.folderId || !foldersList[j.folderId] || foldersList[j.folderId].archived);
   if (sortedFolders().length && loose.length) html += `<li data-dropfolder=""><h2 class="floor">Not in a folder</h2></li>`;
   html += loose.map(([id, j]) => jobRow(id, j)).join("");
   document.getElementById("jobs").innerHTML = html || `<li class="empty">${canEdit ? "No punch lists yet. Tap <b>New list</b> to start one." : "No punch lists yet."}</li>`;
@@ -706,7 +718,7 @@ function applyTrades() {
 function applyFolders() {
   const sel = document.getElementById("jFolder");
   // CHANGED: sub-folders show their full path, e.g. "Oakwood / Phase 2", sorted by that path
-  sel.innerHTML = `<option value="">No folder</option>` + Object.keys(foldersList).map(id => [id, folderPath(id)])
+  sel.innerHTML = `<option value="">No folder</option>` + Object.keys(foldersList).filter(id => !foldersList[id].archived).map(id => [id, folderPath(id)])
     .sort((a, b) => a[1].localeCompare(b[1], undefined, { sensitivity: "base" }))
     .map(([id, p]) => `<option value="${esc(id)}">${esc(p)}</option>`).join("");
   sel.value = foldersList[state.meta.folderId] ? state.meta.folderId : "";
@@ -900,8 +912,15 @@ document.getElementById("jobs").addEventListener("click", e => {
   else if (b.hasAttribute("data-fcancel")) { 
     ui.renameFolder = null; 
     ui.confirmFolder = null; 
+    ui.archiveFolder = null; 
     renderJobs(); 
   }
+  // ADDED: ask "archive this folder?" / confirm it
+  else if (d.farchask) {
+    ui.archiveFolder = d.farchask; ui.confirmFolder = null; ui.renameFolder = null;
+    renderJobs();
+  }
+  else if (d.farchive) { archiveFolder(d.farchive); }
   // Ask "delete this folder?"
   else if (d.fask) { 
     ui.confirmFolder = d.fask;
@@ -1232,6 +1251,51 @@ async function duplicateJob() {
   }
 }
 document.getElementById("dupJob")?.addEventListener("click", duplicateJob);
+// ================= ADDED: ARCHIVE =================
+// Archiving hides a list or folder from All Lists and files it under Settings > Archive, where it can be unarchived or deleted.
+// Nothing is deleted. A list gets archived: true on its own record; a folder gets archived: true inside the folders record.
+// Archiving a folder archives everything in it (sub-folders and lists) in one go. Each of those is stamped archivedWith = the folder you
+// archived, so Settings can restore the whole group together.
+function folderTree(fid) { // this folder plus every folder inside it, at any depth
+  const out = [fid];
+  for (let i = 0; i < out.length; i++) {
+    Object.entries(foldersList).forEach(([id, f]) => { if (f && f.parentId === out[i] && !out.includes(id)) out.push(id); });
+  }
+  return out;
+}
+function canArchiveNow() {
+  if (!needEdit()) return false;
+  if (!fs || !uid || !wid) { toast("Archiving needs a signed-in workspace."); return false; }
+  if (navigator.onLine === false) { toast("You're offline. Connect to the internet to archive."); return false; }
+  return true;
+}
+async function archiveFolder(fid) {
+  if (!foldersList[fid] || !canArchiveNow()) return;
+  const ids = folderTree(fid), mark = { archived: true, archivedAt: new Date().toISOString(), archivedWith: fid };
+  // Lists already archived on their own stay as they are (they keep their own Unarchive button in Settings)
+  const jobIds = Object.entries(jobsList).filter(([, j]) => !j.archived && ids.includes(j.folderId)).map(([id]) => id);
+  try {
+    for (let i = 0; i < jobIds.length; i += 400) { // Firestore allows 500 writes per batch; stay under it
+      const b = fs.batch();
+      jobIds.slice(i, i + 400).forEach(id => b.set(fs.doc("jobs/" + id), mark, { merge: true }));
+      await b.commit();
+    }
+  } catch (e) { console.error("Archive failed:", e); toast("Couldn't archive. Check your connection."); return; }
+  const next = Object.assign({}, foldersList);
+  ids.forEach(id => { if (next[id] && !next[id].archived) next[id] = Object.assign({}, next[id], mark); });
+  foldersList = next; ui.archiveFolder = null;
+  saveSettings(); applyFolders();
+  toast("Folder archived. Find it in Settings, under Archive.");
+}
+async function archiveJob() {
+  if (!jobId || !canArchiveNow()) return;
+  try {
+    await fs.doc("jobs/" + jobId).set({ archived: true, archivedAt: new Date().toISOString(), archivedWith: "" }, { merge: true });
+  } catch (e) { console.error("Archive failed:", e); toast("Couldn't archive. Check your connection."); return; }
+  toast("List archived. Find it in Settings, under Archive.");
+  go(null);
+}
+document.getElementById("archiveJob")?.addEventListener("click", archiveJob);
 // Checking/unchecking an item.
 // CHANGED: checking an item no longer marks it done straight away. The box is unticked again and the signature box opens;
 // the item is only marked done once the person types their name and signs (see SIGNATURE TO MARK DONE below).

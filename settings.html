@@ -27,7 +27,7 @@
 
 <script src="nav-bar/nav.js" defer></script>
 <script src="nav-bar/auth-ui.js" defer></script>
-<script src="settings/settings.js" defer></script>
+<script src="settings/settings.js?v=2" defer></script>
 </head>
 <body>
 
@@ -66,6 +66,7 @@
       <a href="#user">Your profile</a>
       <a href="#workspace">Workspace</a>
       <a href="#members">Members</a>
+      <a href="#archive">Archive</a>
       <a href="#admin" class="owner-only">Admin controls</a>
     </nav>
 
@@ -146,6 +147,18 @@
         <ul class="st-people" id="memberList"></ul>
         <h3 class="st-sub" id="inviteHead" hidden>Invited</h3>
         <ul class="st-people" id="inviteList"></ul>
+      </section>
+
+      <!-- ============ 3b. Archive ============ -->
+      <section class="st-card" id="archive" aria-labelledby="arcH">
+        <header class="st-card-h">
+          <h2 id="arcH">Archive</h2>
+          <p>Archived content. Unarchive to put it back where it was, or delete it for good. Archiving a folder archives everything inside it, and unarchiving or deleting it does the same.</p>
+        </header>
+        <ul class="st-people" id="archiveList"></ul>
+        <p class="f-hint" id="archiveEmpty" hidden>Nothing is archived. Use Archive on a list or folder in My Lists.</p>
+        <p class="f-hint" id="archiveFailed" hidden>Couldn’t load the archive. Refresh to try again.</p>
+        <p class="f-hint" id="archiveNote" hidden>Only editors can unarchive or delete.</p>
       </section>
 
       <!-- ============ 4. Admin controls (owner only) ============ -->

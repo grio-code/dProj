@@ -105,6 +105,9 @@
     document.documentElement.classList.toggle('is-owner', st.isOwner);
 
     await loadPeople();
+    const meRow = st.members.find(m => m.id === user.uid);
+    st.canEdit = st.isOwner || !!(meRow && meRow.canEdit === true); // ADDED: owner and members with "Can edit lists" may unarchive and delete
+    await loadArchive(); // ADDED
     renderAll();
     $('stLayout').hidden = false;
     // Jump to the section in the address (#user, #workspace...) now that it is visible
@@ -122,7 +125,7 @@
   }
 
   // ---------- Render ----------
-  function renderAll() { renderUser(); renderWorkspace(); renderPeople(); renderAdmin(); }
+  function renderAll() { renderUser(); renderWorkspace(); renderPeople(); renderArchive(); renderAdmin(); }
 
   function renderUser() {
     const me = st.members.find(m => m.id === st.user.uid) || {};
@@ -453,6 +456,160 @@
       renderAll();
       showMsg('Invitation for ' + (i.email || i.id) + ' cancelled.');
     } catch (ex) { showMsg(friendly(ex, 'Could not cancel that invitation. Try again.'), true); }
+  }
+
+  // ---------- 5. Archive ----------
+  // Lists and folders archived from All Lists (see "ADDED: ARCHIVE" in all-lists/allLists.js) live here.
+  //   A list is archived when its own record has archived: true.
+  //   A folder is archived when its entry in workspaces/{wid}/settings/app > folders has archived: true.
+  // Archiving a folder stamps everything inside it (sub-folders and lists) with archivedWith = that folder's id, so only the
+  // folder you archived is shown here, as one row, and Unarchive / Delete act on the whole group together.
+  const settingsPath = () => 'workspaces/' + st.wid + '/settings/app';
+  const JOB_COLLS = ['items', 'custom', 'rooms', 'hidden']; // the sub-collections stored under each list
+  const ARCH_CLEAR = { archived: false, archivedAt: null, archivedWith: '' };
+  st.arc = { folders: {}, jobs: {} };
+
+  async function loadArchive() {
+    st.arc = { folders: {}, jobs: {} };
+    st.arcFailed = false;
+    try {
+      const sd = await db.doc(settingsPath()).get();
+      const all = (sd.exists && sd.data().folders) || {};
+      Object.entries(all).forEach(([id, f]) => { if (f && f.archived) st.arc.folders[id] = f; });
+      const js = await db.collection('jobs').where('workspaceId', '==', st.wid).get();
+      js.docs.forEach(d => { const j = d.data(); if (j.archived) st.arc.jobs[d.id] = j; });
+    } catch (ex) { console.error(ex); st.arcFailed = true; }
+  }
+  // The rows to show: a folder is a row unless it was archived as part of a bigger folder; same for lists
+  const isRootFolder = (id, f) => !f.archivedWith || f.archivedWith === id || !st.arc.folders[f.archivedWith];
+  const isRootJob = j => !j.archivedWith || !st.arc.folders[j.archivedWith];
+  const inGroup = (fid) => ({
+    folders: Object.keys(st.arc.folders).filter(id => id === fid || st.arc.folders[id].archivedWith === fid),
+    jobs: Object.keys(st.arc.jobs).filter(id => st.arc.jobs[id].archivedWith === fid)
+  });
+  const plural = (n, w) => n + ' ' + w + (n === 1 ? '' : 's');
+  const fmtIso = iso => { const d = iso ? new Date(iso) : null; return d && !isNaN(d) ? d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : ''; };
+  function jobTitle(j) {
+    const desc = (j.description || '').replace(/\s+/g, ' ').trim();
+    return [j.lot && 'Lot ' + j.lot, j.community, desc].filter(Boolean).join(' · ') || 'Untitled punch list';
+  }
+
+  function renderArchive() {
+    const ul = $('archiveList');
+    ul.textContent = '';
+    const rows = [];
+    Object.entries(st.arc.folders).forEach(([id, f]) => { if (isRootFolder(id, f)) rows.push({ kind: 'folder', id, data: f }); });
+    Object.entries(st.arc.jobs).forEach(([id, j]) => { if (isRootJob(j)) rows.push({ kind: 'list', id, data: j }); });
+    rows.sort((a, b) => (b.data.archivedAt || '').localeCompare(a.data.archivedAt || ''));
+    $('archiveEmpty').hidden = !!rows.length || st.arcFailed;
+    $('archiveFailed').hidden = !st.arcFailed;
+    $('archiveNote').hidden = st.canEdit || !rows.length;
+    rows.forEach(r => {
+      const li = el('li');
+      const who = el('div', 'st-person');
+      let sub;
+      if (r.kind === 'folder') {
+        const g = inGroup(r.id), subs = g.folders.length - 1;
+        who.appendChild(el('b', null, r.data.name || 'Untitled folder'));
+        sub = [subs > 0 ? plural(subs, 'folder') : '', plural(g.jobs.length, 'list')].filter(Boolean).join(' · ');
+      } else {
+        who.appendChild(el('b', null, jobTitle(r.data)));
+        sub = r.data.address || '';
+      }
+      const when = fmtIso(r.data.archivedAt);
+      who.appendChild(el('span', null, [sub, when && 'Archived ' + when].filter(Boolean).join(' · ')));
+      li.append(who, el('span', 'role', r.kind === 'folder' ? 'Folder' : 'List'));
+      if (st.canEdit) {
+        const un = el('button', 'btn btn--sm', 'Unarchive');
+        un.type = 'button';
+        un.addEventListener('click', () => (r.kind === 'folder' ? unarchiveFolder : unarchiveJob)(r.id, un));
+        const del = el('button', 'btn btn--sm btn--danger', 'Delete');
+        del.type = 'button';
+        del.addEventListener('click', () => (r.kind === 'folder' ? deleteFolder : deleteJob)(r.id, del));
+        li.append(un, del);
+      }
+      ul.appendChild(li);
+    });
+  }
+
+  async function refreshArchive() { await loadArchive(); renderArchive(); }
+  // Commit writes 400 at a time (Firestore allows 500 per batch)
+  async function inBatches(items, add) {
+    for (let i = 0; i < items.length; i += 400) {
+      const b = db.batch();
+      items.slice(i, i + 400).forEach(it => add(b, it));
+      await b.commit();
+    }
+  }
+  const freshFolders = async () => Object.assign({}, ((await db.doc(settingsPath()).get()).data() || {}).folders || {});
+  const archivedJobsOf = fid => db.collection('jobs').where('workspaceId', '==', st.wid).where('archivedWith', '==', fid).get();
+
+  async function unarchiveJob(id, btn) {
+    const j = st.arc.jobs[id];
+    if (!j) return;
+    try {
+      let moved = false;
+      await busy(btn, 'Restoring…', async () => {
+        const folders = await freshFolders(), f = j.folderId && folders[j.folderId];
+        const keep = !!f && !f.archived; // if its folder is archived (or gone), the list comes back in the main list instead
+        moved = !!j.folderId && !keep;
+        await db.doc('jobs/' + id).update(Object.assign({}, ARCH_CLEAR, keep ? {} : { folderId: '' }));
+      });
+      await refreshArchive();
+      showMsg('List unarchived.' + (moved ? ' Its folder is archived, so it is back in the main list.' : ''));
+    } catch (ex) { showMsg(friendly(ex, 'Could not unarchive that list. Try again.'), true); }
+  }
+  async function unarchiveFolder(fid, btn) {
+    try {
+      await busy(btn, 'Restoring…', async () => {
+        const folders = await freshFolders();
+        const ids = Object.keys(folders).filter(id => id === fid || (folders[id] && folders[id].archivedWith === fid));
+        const jobs = await archivedJobsOf(fid);
+        await inBatches(jobs.docs, (b, d) => b.update(d.ref, ARCH_CLEAR));
+        ids.forEach(id => { const { archived, archivedAt, archivedWith, ...rest } = folders[id]; folders[id] = rest; });
+        const root = folders[fid];
+        if (root && root.parentId && (!folders[root.parentId] || folders[root.parentId].archived)) root.parentId = ''; // its parent folder is still archived
+        await db.doc(settingsPath()).update({ folders });
+      });
+      await refreshArchive();
+      showMsg('Folder unarchived, with everything that was inside it.');
+    } catch (ex) { showMsg(friendly(ex, 'Could not unarchive that folder. Try again.'), true); }
+  }
+
+  // Firestore doesn't delete sub-collections along with a list, so empty each one first, then the list itself
+  async function deleteJobData(id) {
+    for (const coll of JOB_COLLS) {
+      const snap = await db.collection('jobs/' + id + '/' + coll).get();
+      await inBatches(snap.docs, (b, d) => b.delete(d.ref));
+    }
+    await db.doc('jobs/' + id).delete();
+  }
+  async function deleteJob(id, btn) {
+    const j = st.arc.jobs[id];
+    if (!j || !confirm('Delete "' + jobTitle(j) + '" for good? Its rooms, items and signatures will be gone, and this can’t be undone.')) return;
+    try {
+      await busy(btn, 'Deleting…', () => deleteJobData(id));
+      await refreshArchive();
+      showMsg('List deleted.');
+    } catch (ex) { await refreshArchive(); showMsg(friendly(ex, 'Could not delete that list. Try again.'), true); }
+  }
+  async function deleteFolder(fid, btn) {
+    const f = st.arc.folders[fid];
+    if (!f) return;
+    const g = inGroup(fid), subs = g.folders.length - 1;
+    const what = [subs > 0 ? plural(subs, 'folder') : '', plural(g.jobs.length, 'list')].filter(Boolean).join(' and ');
+    if (!confirm('Delete the folder "' + (f.name || 'Untitled folder') + '" for good, along with the ' + what + ' inside it? Their rooms, items and signatures will be gone, and this can’t be undone.')) return;
+    try {
+      await busy(btn, 'Deleting…', async () => {
+        const jobs = await archivedJobsOf(fid);
+        for (const d of jobs.docs) await deleteJobData(d.id);
+        const folders = await freshFolders();
+        Object.keys(folders).forEach(id => { if (id === fid || (folders[id] && folders[id].archivedWith === fid)) delete folders[id]; });
+        await db.doc(settingsPath()).update({ folders });
+      });
+      await refreshArchive();
+      showMsg('Folder deleted.');
+    } catch (ex) { await refreshArchive(); showMsg(friendly(ex, 'Could not delete that folder. Try again.'), true); }
   }
 
   // ---------- Section links: highlight the section you're looking at ----------
