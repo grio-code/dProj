@@ -28,7 +28,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="firebase-starter/firebase-config.js"></script>
-<script src="all-lists/allLists.js?v=4" defer></script> <!-- CHANGED: ?v=2 makes browsers load the new version. Raise the number each time you change this file or list.css. -->
+<script src="all-lists/allLists.js?v=5" defer></script> <!-- CHANGED: ?v=2 makes browsers load the new version. Raise the number each time you change this file or list.css. -->
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
@@ -185,6 +185,8 @@
       <div class="tools">
         <button type="button" class="btn" id="linkBtn">Send link</button>
         <!-- REMOVED: the "Copy list for subs" button (id="copyBtn") was here -->
+        <!-- ADDED: makes a copy of this list (rooms, items, trades, notes) with nothing checked off -->
+        <button type="button" class="btn edit-only" id="dupJob">Duplicate list</button>
         <button type="button" class="btn edit-only" id="tradesBtn">Edit levels &amp; trades</button>
         <span class="saved" id="saved">Loading…</span>
       </div>

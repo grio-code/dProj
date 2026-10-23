@@ -1162,6 +1162,76 @@ document.getElementById("delJob").addEventListener("click", async () => {
   } else { delete local.jobs[id]; lsSave(); }
   toast("Punch list deleted"); go(null);
 });
+// ================= ADDED: DUPLICATE A LIST =================
+// "Duplicate list" (next to Send link, editors only) makes a new list in the same folder with the same rooms, items, trades and notes.
+// Nothing counts as done in the copy and no signatures are carried over, because a signature is a real sign-off for the original list.
+// The copy gets today's date, and "(copy)" is added to its description so you can tell the two apart. Then it opens, so you can edit it right away.
+let duplicating = false; // stops a double tap from making two copies
+async function duplicateJob() {
+  if (!jobId || duplicating || !needEdit()) return;
+  if (fs && !uid) { location.href = "login.html"; return; }
+  if (fs && !wid) { location.href = "signup.html"; return; }
+  if (fs && navigator.onLine === false) { toast("You're offline. Connect to the internet to duplicate a list."); return; }
+  duplicating = true;
+  const btn = document.getElementById("dupJob"); if (btn) btn.disabled = true;
+  flag("Duplicating…");
+  const newId = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  let made = false; // true once the new list's record exists
+  try {
+    // 1. Get everything from the open list. Firestore mode asks the database directly, so a copy made right after opening isn't missing anything that hasn't synced yet.
+    const src = { meta: {}, items: {}, custom: {}, rooms: {}, hidden: {} };
+    if (fs) {
+      const jd = await fs.doc("jobs/" + jobId).get();
+      src.meta = jd.exists ? jd.data() : {};
+      for (const coll of COLLS) { const snap = await fs.collection("jobs/" + jobId + "/" + coll).get(); snap.docs.forEach(d => { src[coll][d.id] = d.data(); }); }
+    } else {
+      Object.assign(src, JSON.parse(JSON.stringify(state)));
+    }
+    // 2. Build the copy. Items keep their trade and note but start open and unsigned.
+    const nowIso = new Date().toISOString(), t = new Date();
+    const today = t.getFullYear() + "-" + String(t.getMonth() + 1).padStart(2, "0") + "-" + String(t.getDate()).padStart(2, "0");
+    const items = {};
+    Object.entries(src.items).forEach(([id, r]) => {
+      if (!r || (!r.note && !r.trade)) return; // nothing worth keeping once done and signature are cleared
+      items[id] = { done: false, doneAt: null, signedBy: "", signature: "", note: r.note || "", trade: r.trade || "", updatedAt: nowIso };
+    });
+    const m = src.meta || {}, desc = (m.description || "").trim().slice(0, 980);
+    const meta = {
+      ownerId: uid, workspaceId: wid, date: today,
+      community: m.community || "", address: m.address || "", lot: m.lot || "",
+      description: (desc ? desc + " " : "") + "(copy)",
+      folderId: m.folderId || "", createdAt: nowIso
+    };
+    const copy = { items, custom: src.custom, rooms: src.rooms, hidden: src.hidden };
+    // Count the copy's items the same way the app does (counts() reads the global state, so swap it in for a moment)
+    const keep = state; state = Object.assign(blank(), copy);
+    const c = counts(); state = keep;
+    // 3. Save it
+    if (fs) {
+      await fs.doc("jobs/" + newId).set(Object.assign({}, meta, { openCount: c.open, totalCount: c.total, updatedAt: nowIso }));
+      made = true; // the list record has to exist first: the rules look it up to check you may edit
+      const writes = [];
+      COLLS.forEach(coll => Object.entries(copy[coll]).forEach(([id, d]) => writes.push([coll, id, d])));
+      for (let i = 0; i < writes.length; i += 400) { // Firestore allows 500 writes per batch; stay under it
+        const b = fs.batch();
+        writes.slice(i, i + 400).forEach(([coll, id, d]) => b.set(fs.doc("jobs/" + newId + "/" + coll + "/" + id), d));
+        await b.commit();
+      }
+    } else {
+      local.jobs[newId] = Object.assign(blank(), copy, { meta }); lsSave();
+    }
+    if (meta.folderId) { ui.openFolders[meta.folderId] = true; uiSave(); } // keep its folder open so the copy is easy to find
+    toast("List duplicated. You're now in the copy.");
+    go(newId);
+  } catch (e) {
+    console.error("Duplicate list failed:", e);
+    toast(made ? "Couldn't finish copying. Delete the partial copy from All Lists and try again."
+               : e && e.code === "permission-denied" ? "Couldn't duplicate: permission denied." : "Couldn't duplicate the list. Check your connection.");
+  } finally {
+    duplicating = false; if (btn) btn.disabled = false;
+  }
+}
+document.getElementById("dupJob")?.addEventListener("click", duplicateJob);
 // Checking/unchecking an item.
 // CHANGED: checking an item no longer marks it done straight away. The box is unticked again and the signature box opens;
 // the item is only marked done once the person types their name and signs (see SIGNATURE TO MARK DONE below).
