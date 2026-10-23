@@ -1308,11 +1308,10 @@ document.addEventListener("submit", e => {
     document.getElementById("add-" + id)?.focus(); // jump into the new room's "New Item" field
     return;
   }
-  // ADDED: create a new folder (ignores empty names and duplicates, case-insensitive)
+  // ADDED: create a new folder (ignores empty names; CHANGED: duplicate names are allowed, since every folder has its own id)
   if (f.id === "addFolderForm") {
     const inp = document.getElementById("newFolderName"), name = inp.value.trim();
     if (!name) return;
-    if (Object.values(foldersList).some(x => (x.name || "").toLowerCase() === name.toLowerCase())) { toast("You already have a folder with that name"); return; }
     const id = "f-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
     foldersList = Object.assign({}, foldersList, { [id]: { name, createdAt: new Date().toISOString() } });
     ui.openFolders[id] = true; uiSave(); // start the new folder expanded
