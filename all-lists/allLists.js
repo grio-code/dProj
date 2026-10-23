@@ -1191,11 +1191,13 @@ function openSig(id) {
   sigName.value = myName || lastSigner();
   sigErr.hidden = true;
   sigBack.hidden = false;
+  document.documentElement.style.overflow = "hidden"; // ADDED: page behind the pop-up doesn't scroll while it's open
   sizePad();
-  (sigName.value ? pad : sigName).focus();
+  (sigName.value ? pad : sigName).focus({ preventScroll: true }); // CHANGED: focusing must never scroll the page
 }
 function closeSig() {
   sigBack.hidden = true; sig.id = null;
+  document.documentElement.style.overflow = ""; // ADDED: let the page scroll again
   const cb = document.activeElement; if (cb && cb.blur) cb.blur();
 }
 // Match the canvas's pixels to its size on screen (sharper on phones) and wipe it
@@ -1236,7 +1238,7 @@ window.addEventListener("resize", () => { if (sigBack && !sigBack.hidden && !sig
 document.getElementById("sigOk")?.addEventListener("click", () => {
   const name = sigName.value.replace(/\s+/g, " ").trim();
   const err = !name ? "Type your name." : !sig.drawn ? "Sign in the box." : "";
-  if (err) { sigErr.textContent = err; sigErr.hidden = false; (name ? pad : sigName).focus(); return; }
+  if (err) { sigErr.textContent = err; sigErr.hidden = false; (name ? pad : sigName).focus({ preventScroll: true }); return; }
   const signature = sigImage();
   if (signature.length >= 100000) { sigErr.textContent = "That signature is too detailed. Tap Clear and sign again."; sigErr.hidden = false; return; }
   try { localStorage.setItem(LS + "-signer", name); } catch (e) {}
