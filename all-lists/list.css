@@ -70,7 +70,7 @@ body {
   max-width: 720px; 
   margin: 0 auto; 
   padding-inline: 16px; 
-  padding-block: 0 56px; 
+  padding-block: 0 calc(130px + env(safe-area-inset-bottom, 0px)); /* CHANGED: was 56px. Leaves room under the last thing on the page (like "Delete this list") so the floating bottom dock never covers it */
 } /* centered column, phone-width on desktop too */
 button, select, input, textarea { 
   font: inherit; 
@@ -831,3 +831,17 @@ html:not(.can-edit) .edit-only {
 .sig-err { margin: 0; color: var(--danger); font-size: 14px; }
 .sig-box .acts { display: flex; gap: 8px; justify-content: flex-end; margin-top: 4px; }
 .sig-box .acts .btn.primary { flex: 1; }
+
+/* ---------- ADDED: stop the Date and Lot # fields overlapping on phones ----------
+   iPhones draw a date box with its own minimum width, which pushed it out of its column and over the Lot # box.
+   Each field's column is now allowed to shrink (minmax(0, 1fr)), and the date box is reset to behave like the text boxes. */
+.jobinfo .f { grid-template-columns: minmax(0, 1fr); }
+.jobinfo input { min-height: 42px; box-sizing: border-box; }
+.jobinfo input[type="date"] {
+  -webkit-appearance: none; appearance: none; /* drop the iOS built-in look so width and height obey the CSS */
+  display: block;
+  width: 100%; min-width: 0; max-width: 100%;
+  text-align: left;
+  line-height: 1.2;
+}
+.jobinfo input[type="date"]::-webkit-date-and-time-value { text-align: left; min-width: 0; margin: 0; }
