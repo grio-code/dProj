@@ -4,8 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Create your workspace · Integrate Software</title>
-<meta name="theme-color" content="#eceeea" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#151a19" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#0d1820">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 
@@ -14,6 +13,7 @@
 <link href="all-lists/list.css" rel="stylesheet">
 <link href="login-logout/login.css" rel="stylesheet">
 <link href="workspace/workspace.css" rel="stylesheet">
+<link href="theme.css?v=1" rel="stylesheet"> <!-- home page look; keep this the last stylesheet -->
 
 <!-- Firebase (compat build) + your project settings. These must load BEFORE signup.js -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -24,6 +24,9 @@
 <script src="sign-up/sign-up.js" defer></script>
 </head>
 <body>
+
+<!--  animated backdrop  -->
+<div class="backdrop" aria-hidden="true"><i class="bd-glow bd-g1"></i><i class="bd-glow bd-g2"></i><i class="bd-glow bd-g3"></i><i class="bd-glow bd-g4"></i><i class="bd-grid"></i></div>
 
 <!-- Goo filter for the dock -->
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">

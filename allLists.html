@@ -11,8 +11,7 @@
 <meta name="apple-mobile-web-app-title" content="My Lists">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <!-- Browser toolbar color, matched to light and dark mode backgrounds -->
-<meta name="theme-color" content="#eceeea" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#151a19" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#0d1820">
 <!-- PWA manifest and icons used when the app is installed to a home screen -->
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -23,7 +22,8 @@
 
 <link href="nav-bar/nav.css" rel="stylesheet">
 <script src="nav-bar/nav.js" defer></script>
-<link href="all-lists/list.css?v=3" rel="stylesheet"> 
+<link href="all-lists/list.css?v=3" rel="stylesheet">
+<link href="theme.css?v=1" rel="stylesheet"> <!-- home page look; keep this the last stylesheet --> 
 <!-- Firebase libraries (compat build) and your project settings. These must load BEFORE allLists.js -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
@@ -38,6 +38,10 @@
 
 </head>
 <body>
+
+<!--  animated backdrop  -->
+<!-- <div class="backdrop" aria-hidden="true"><i class="bd-glow bd-g1"></i><i class="bd-glow bd-g2"></i><i class="bd-glow bd-g3"></i><i class="bd-glow bd-g4"></i><i class="bd-grid"></i></div> -->
+
 <!-- Navigation -->
 <!-- Goo filter for the dock (include once) -->
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">

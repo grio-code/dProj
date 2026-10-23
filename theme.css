@@ -1,0 +1,166 @@
+/* ==========================================================================
+   Integrate theme: gives every inner page the look of the home page (index.html).
+   Black backdrop, drifting glows (blueprint blue, hi-vis amber, safety orange, teal),
+   a faint blueprint grid, white text, big Barlow Condensed headings and amber buttons.
+
+   How it works: the page stylesheets (list.css, login.css, settings.css, ...) all draw with the
+   same color variables (--bg, --sheet, --ink, --lg-* ...). This file re-points those variables to
+   the home page colors for the page content only, so the top bar and dock stay exactly as they
+   look on the home page. Load it LAST, after every other stylesheet on the page, and put the
+   backdrop markup right after <body>:
+
+   <div class="backdrop" aria-hidden="true"><i class="bd-glow bd-g1"></i><i class="bd-glow bd-g2"></i><i class="bd-glow bd-g3"></i><i class="bd-glow bd-g4"></i><i class="bd-grid"></i></div>
+   ========================================================================== */
+
+/* ---------- Page base ---------- */
+html { background: #121212; }
+body {
+  margin: 0;
+  background: transparent;   /* the black lives on <html>, so the backdrop isn't covered by the body */
+  color: #fff;
+  font-family: var(--f-body);
+}
+
+/* Colors for everything on the page except the top bar and dock */
+body > :not(.fnav):not(.dock):not(svg) {
+  --bg: rgba(0, 0, 0, .34);             /* fields and sunken areas */
+  --sheet: rgba(18, 24, 23, .62);       /* cards: dark glass over the glows */
+  --ink: #fff;
+  --muted: rgba(255, 255, 255, .68);
+  --rule: rgba(255, 255, 255, .16);
+  --accent: #f0b232;
+  --accent-ink: #231800;
+  --done: #58b07c;
+  --chip: rgba(141, 184, 222, .16);
+  --chip-ink: #8db8de;
+  --danger: #ff8a7a;
+  --focus: #fff;
+  /* login / sign-up / workspace pages */
+  --lg-surface: rgba(18, 24, 23, .62);
+  --lg-line: rgba(255, 255, 255, .16);
+  --lg-text: #fff;
+  --lg-muted: rgba(255, 255, 255, .7);
+  /* solid versions, for text drawn on top of a colored fill */
+  --solid: #0d1312;
+  color-scheme: dark;
+  color: var(--ink);
+}
+
+/* ---------- Backdrop: the same drifting gradient and grid as the home page hero ---------- */
+.backdrop {
+  position: fixed; inset: 0; z-index: -1;
+  overflow: hidden; pointer-events: none;
+  background: #121212;
+}
+.bd-glow { position: absolute; border-radius: 50%; will-change: transform; }
+.bd-g1 { width: 70vmax; height: 70vmax; left: -25vmax; top: -30vmax; background: radial-gradient(circle, #2d6aa0 0%, transparent 62%); animation: bd-drift1 26s ease-in-out infinite alternate; }
+.bd-g2 { width: 70vmax; height: 70vmax; right: -30vmax; bottom: -35vmax; background: radial-gradient(circle, #f0b232 0%, transparent 60%); animation: bd-drift2 30s ease-in-out infinite alternate; }
+.bd-g3 { width: 50vmax; height: 50vmax; right: 5vmax; top: -20vmax; opacity: .6; background: radial-gradient(circle, #e8641f 0%, transparent 60%); animation: bd-drift3 22s ease-in-out infinite alternate; }
+.bd-g4 { width: 55vmax; height: 55vmax; left: 15vmax; bottom: -30vmax; opacity: .7; background: radial-gradient(circle, #1f8f8a 0%, transparent 60%); animation: bd-drift4 34s ease-in-out infinite alternate; }
+@keyframes bd-drift1 { to { transform: translate(35vmax, 25vmax) scale(1.15); } }
+@keyframes bd-drift2 { to { transform: translate(-40vmax, -18vmax) scale(.9); } }
+@keyframes bd-drift3 { to { transform: translate(-30vmax, 28vmax) scale(1.2); } }
+@keyframes bd-drift4 { to { transform: translate(30vmax, -22vmax) scale(1.1); } }
+.bd-grid {
+  position: absolute; inset: 0;
+  background-image: linear-gradient(rgba(255,255,255,.10) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.10) 1px, transparent 1px);
+  background-size: 56px 56px;
+  -webkit-mask-image: radial-gradient(ellipse at 30% 40%, #000 0%, transparent 75%);
+  mask-image: radial-gradient(ellipse at 30% 40%, #000 0%, transparent 75%);
+}
+
+/* ---------- Headings: the hero headline, scaled for inner pages ---------- */
+.wrap h1 {
+  font: 700 clamp(44px, 7vw, 72px)/.92 var(--f-display);
+  text-transform: none;
+  letter-spacing: -.01em;
+  text-wrap: balance;
+  text-shadow: 0 2px 24px rgba(0,0,0,.25);
+}
+.titlebar, .st-head { padding-top: 12px; margin-bottom: 8px; }
+.count .big { font-size: clamp(40px, 6vw, 56px); color: var(--accent); }
+.st-card-h h2, .sig-box h2 { text-transform: none; font-size: 32px; letter-spacing: -.005em; }
+
+/* ---------- Cards: dark glass so the glows show through ---------- */
+.login-card, .st-card, .room, ul.jobs a, .tip, .viewonly, .confirm.boxed {
+  background: var(--sheet);
+  border-color: var(--rule);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+}
+.login-card { border-radius: 8px; padding: 24px 22px 22px; }
+.login-card p { color: var(--lg-muted); }
+ul.jobs a { transition: transform .2s, border-color .2s; }
+ul.jobs a:hover { transform: translateY(-2px); border-color: rgba(255,255,255,.55); }
+.banner { background: var(--chip); color: var(--ink); border: 1px solid rgba(141,184,222,.3); }
+.st-msg, .st-result { background: var(--sheet); }
+
+/* Sticky bars sit over scrolling content, so blur what passes underneath */
+header.top { background: rgba(0, 0, 0, .55); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
+@media (max-width: 760px) {
+  .st-toc { background: rgba(0, 0, 0, .55); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
+}
+
+/* Settings facts table: draw the cell lines with borders (the glass cards can't show a gap color) */
+.st-facts { gap: 0; background: transparent; }
+.st-facts > div { background: transparent; box-shadow: inset -1px -1px 0 var(--rule); }
+
+/* ---------- Buttons: amber main button and outlined secondary, like the home page ---------- */
+.btn {
+  background: transparent;
+  color: #fff;
+  border: 2px solid rgba(255, 255, 255, .4);
+  border-radius: 8px;
+  font-weight: 600;
+  transition: transform .2s, background .2s, border-color .2s;
+}
+.btn:hover { border-color: #fff; background: rgba(255,255,255,.08); }
+.btn:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+.btn.primary, .btn--primary {
+  background: #f0b232;
+  color: #231800;
+  border-color: transparent;
+}
+.btn.primary:hover, .btn--primary:hover { background: #ffc54d; border-color: transparent; opacity: 1; transform: translateY(-2px); }
+.btn.danger, .btn--danger { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 60%, transparent); }
+.btn.danger:hover, .btn--danger:hover { border-color: var(--danger); background: color-mix(in srgb, var(--danger) 12%, transparent); }
+.btn--quiet { border-color: transparent; }
+.btn:disabled, .btn[disabled] { transform: none; }
+.login-form .btn { min-height: 52px; font-size: 16px; }
+
+/* ---------- Fields ---------- */
+input, select, textarea { color: #fff; }
+.jobinfo input, .jobinfo textarea, .jobinfo select, .filters select, .addroom select, .copybox textarea,
+#addFolderForm input, .login-form input, .ws-form textarea, .ws-form input[readonly], .f input, .f textarea, .sig-box input {
+  background: rgba(0, 0, 0, .34);
+  border-color: var(--rule);
+}
+input::placeholder, textarea::placeholder { color: rgba(255, 255, 255, .45); }
+.login-form input:focus-visible, .ws-form textarea:focus-visible, .f input:focus-visible, .f textarea:focus-visible,
+.jobinfo input:focus-visible, .jobinfo textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; border-color: transparent; }
+/* Native dropdown lists can't be see-through, so give the options a solid dark background */
+option { background: #151a19; color: #fff; }
+input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); opacity: .7; }
+
+/* ---------- Text on colored fills: --sheet is see-through now, so use a solid dark color instead ---------- */
+.pill.clear, .badge-done, .role--editor { color: var(--solid); }
+.item input[type=checkbox] { background: transparent; border-color: rgba(255,255,255,.55); }
+.item input[type=checkbox]:checked::after { border-color: var(--solid); }
+.st-switch-ui::after { background: #fff; }
+
+/* ---------- Pop-ups: solid so they read clearly over the page ---------- */
+.sig-back { background: rgba(0, 0, 0, .65); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
+.sig-box { background: #121817; border: 1px solid var(--rule); border-radius: 8px; }
+.st-menu-list { background: #121817; }
+.toast { background: #f0b232; color: #231800; font-weight: 500; }
+
+/* ---------- Links ---------- */
+.link, .back { color: var(--chip-ink); }
+.link:hover, .back:hover { color: #fff; }
+
+/* ---------- Accessibility ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .bd-glow { animation: none; }
+  .btn, ul.jobs a { transition: none; }
+  .btn:hover, ul.jobs a:hover { transform: none; }
+}
