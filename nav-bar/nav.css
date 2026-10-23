@@ -445,3 +445,44 @@ html.signed-in .fnav-hello { display: flex; }
     transition-duration: .01ms !important; 
   }
 }
+/* ---------- Glass top bar ----------
+   Every page now sits on the dark glowing backdrop, so the bar is always frosted dark glass
+   (in light and dark mode alike) and lets the glows show through. Its colors are set here,
+   on .fnav only, so nothing else on the page changes. */
+.fnav {
+  --sheet: rgba(255, 255, 255, .10);    /* sliding pill behind the current link */
+  --bg: rgba(255, 255, 255, .06);       /* link tray, hover backgrounds */
+  --ink: #fff;
+  --muted: rgba(255, 255, 255, .7);
+  --rule: rgba(255, 255, 255, .16);
+  --accent: #f0b232;
+  --accent-ink: #231800;
+  --focus: #fff;
+  color-scheme: dark;
+  background: rgba(255, 255, 255, .07);
+  border: 1px solid rgba(255, 255, 255, .14);
+  border-radius: 12px;
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+  backdrop-filter: blur(18px) saturate(160%);
+  box-shadow: 0 10px 30px -12px rgba(0, 0, 0, .55), inset 0 1px 0 rgba(255, 255, 255, .08);
+}
+/* Browsers without blur support get a solid dark bar instead of a see-through one */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .fnav { background: rgba(14, 18, 17, .92); }
+}
+
+/* Buttons: white outline, and an amber "Sign up" like the main button on the home page */
+.fnav-btn {
+  color: #fff;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, .28);
+  border-radius: 8px;
+  font-weight: 500;
+  transition: background .2s, border-color .2s;
+}
+.fnav-btn:hover { background: rgba(255, 255, 255, .08); border-color: rgba(255, 255, 255, .6); }
+.fnav-actions a.fnav-btn[href$="signup.html"] { background: #f0b232; color: #231800; border-color: transparent; font-weight: 600; }
+.fnav-actions a.fnav-btn[href$="signup.html"]:hover { background: #ffc54d; }
+
+/* Keep Login / Sign up in the right-hand column even when the middle (page links) is empty */
+.fnav-actions { grid-column: 3; }
