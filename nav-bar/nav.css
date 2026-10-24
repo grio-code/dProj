@@ -487,11 +487,10 @@ html.signed-in .fnav-hello { display: flex; }
 /* Keep Login / Sign up in the right-hand column even when the middle (page links) is empty */
 .fnav-actions { grid-column: 3; }
 
-/* ---------- Glass bottom dock ----------
-   Same frosted glass as the top bar. The amber + button keeps its color.
-   The "goo" filter that used to melt the bar and the + button together is switched off,
-   because a filter stops the glass from blurring what's behind it. The + button now sits
-   just beside the glass pill as its own circle. */
+/* ---------- Bottom dock ----------
+   The "goo" filter (#fn-goo, in each page's HTML) melts the bar and the amber + button together.
+   The filter needs solid shapes: it can't blur what's behind the bar (no frosted glass), and it erases
+   see-through fills. So the bar is a solid dark color that matches the glass top bar on the dark backdrop. */
 .dock {
   --bg: #fff;                           /* icon color */
   --ink: #fff;
@@ -502,20 +501,10 @@ html.signed-in .fnav-hello { display: flex; }
   --focus: #fff;
   color-scheme: dark;
 }
-.dock-shape { filter: none; }
-.dock-bar {
-  right: 82px;
-  background: rgba(255, 255, 255, .07);
-  border: 1px solid rgba(255, 255, 255, .14);
-  -webkit-backdrop-filter: blur(18px) saturate(160%);
-  backdrop-filter: blur(18px) saturate(160%);
-  box-shadow: 0 10px 30px -12px rgba(0, 0, 0, .55), inset 0 1px 0 rgba(255, 255, 255, .08);
-}
-.dock-blob { box-shadow: 0 10px 24px -8px rgba(0, 0, 0, .6); }
-@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  .dock-bar { background: rgba(14, 18, 17, .92); }
-}
-@media (max-width: 420px) { .dock-bar { right: 82px; } }
+.dock-shape { filter: url(#fn-goo) drop-shadow(0 10px 18px rgba(0, 0, 0, .5)); }
+.dock-bar { right: 76px; background: #232626; }
+@media (max-width: 420px) { .dock-bar { right: 70px; } }
+.dock:hover .dock-blob { transform: translateX(6px); }  /* stretches the gooey neck between bar and + */
 
 /* Hover labels and the create menu: dark glass with white text */
 .dock-tip { background: rgba(18, 24, 23, .9); color: #fff; border: 1px solid rgba(255, 255, 255, .14); }
