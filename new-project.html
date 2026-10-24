@@ -27,7 +27,7 @@
 
 <script src="nav-bar/nav.js" defer></script>
 <script src="nav-bar/auth-ui.js" defer></script>
-<script src="new-project/new-project.js?v=1" defer></script>
+<script src="new-project/new-project.js?v=2" defer></script>
 </head>
 <body>
 
@@ -53,9 +53,9 @@
 </header>
 
 <main class="wrap np">
-  <a class="np-back" href="index.html#dashboard">‹ Dashboard</a>
-  <h1>New project</h1>
-  <p class="np-lede">Add the project's details and timeline. You can add its punch lists from the project's page right after.</p>
+  <a class="np-back" id="npBack" href="index.html#dashboard">‹ Dashboard</a>
+  <h1 id="npTitle">New project</h1>
+  <p class="np-lede" id="npLede">Add the project's details and timeline. You can add its punch lists from the project's page right after.</p>
 
   <div class="np-msg" id="npMsg" role="alert" hidden></div>
 
@@ -120,7 +120,7 @@
 
     <div class="np-actions">
       <button type="submit" class="btn btn--primary" id="npSave">Create project</button>
-      <a class="btn" href="index.html#dashboard">Cancel</a>
+      <a class="btn" id="npCancel" href="index.html#dashboard">Cancel</a>
     </div>
   </form>
 </main>

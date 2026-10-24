@@ -1,4 +1,5 @@
 // New project page (new-project.html). Opened from "New Project" in the bottom dock's + menu.
+// With ?edit={projectId} the same page edits an existing project instead (opened from "Edit project" on the project's page).
 //
 // Saves a project. Its punch lists are made afterwards from the project's page, and point back to it with projectId:
 //   projects/{id}  ownerId, workspaceId, name, community, lot, address, description, date (project date),
@@ -16,10 +17,22 @@
   const STANDARD_PHASES = ['Site prep', 'Foundation', 'Framing', 'Rough-ins', 'Insulation and drywall', 'Finishes', 'Punch and closeout'];
   const MAX_PHASES = 20;
   const st = { uid: '', wid: '', canEdit: false, ready: false };
+  const editId = new URLSearchParams(location.search).get('edit') || ''; // set when editing an existing project
+  const SAVE_LABEL = editId ? 'Save changes' : 'Create project';
+  const NO_EDIT_MSG = 'Only editors can ' + (editId ? 'change' : 'create') + ' projects. Ask a workspace admin for editing access.';
 
   const pad = n => String(n).padStart(2, '0');
   const ymd = d => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
   $('npDate').value = ymd(new Date());
+  if (editId) {
+    // Edit mode: new wording now, the saved details are filled in once we're signed in
+    document.title = 'Edit project · Integrate';
+    $('npTitle').textContent = 'Edit project';
+    $('npLede').textContent = 'Change the project’s details, timeline and phases.';
+    $('npSave').textContent = SAVE_LABEL;
+    $('npBack').textContent = '‹ Back to project';
+    $('npBack').href = $('npCancel').href = 'index.html#projects/' + encodeURIComponent(editId);
+  }
 
   function showMsg(text) {
     const m = $('npMsg');
@@ -85,7 +98,7 @@
     e.preventDefault();
     showMsg('');
     if (!st.ready) return showMsg('Still checking your account. Try again in a moment.');
-    if (!st.canEdit) return showMsg('Only editors can create projects. Ask a workspace admin for editing access.');
+    if (!st.canEdit) return showMsg(NO_EDIT_MSG);
 
     const name = $('npName').value.trim();
     const start = $('npStart').value, end = $('npEnd').value;
@@ -106,13 +119,11 @@
 
     const btn = $('npSave');
     btn.disabled = true;
-    btn.textContent = 'Creating…';
-    const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    btn.textContent = editId ? 'Saving…' : 'Creating…';
+    const id = editId || Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
     const now = new Date().toISOString();
     try {
-      await db.doc('projects/' + id).set({
-        ownerId: st.uid,
-        workspaceId: st.wid,
+      const details = {
         name,
         community: $('npCommunity').value.trim(),
         lot: $('npLot').value.trim(),
@@ -122,21 +133,37 @@
         startDate: start || '',
         endDate: end || '',
         phases: phases.map(p => ({ name: p.name, start: p.start || '', end: p.end || '' })),
-        createdAt: now,
         updatedAt: now
-      });
+      };
+      if (editId) await db.doc('projects/' + id).update(details); // ownerId, workspaceId and createdAt stay as they were
+      else await db.doc('projects/' + id).set(Object.assign({ ownerId: st.uid, workspaceId: st.wid, createdAt: now }, details));
       location.href = 'index.html#projects/' + encodeURIComponent(id);
     } catch (ex) {
       console.error(ex);
       btn.disabled = false;
-      btn.textContent = 'Create project';
+      btn.textContent = SAVE_LABEL;
+      const verb = editId ? 'save the changes' : 'create the project';
       showMsg(ex && ex.code === 'permission-denied'
-        ? 'Couldn’t create the project: permission denied. Only editors can create projects, and the Firestore rules must be published.'
-        : 'Couldn’t create the project. Check your connection and try again.');
+        ? 'Couldn’t ' + verb + ': permission denied. Only editors can ' + (editId ? 'change' : 'create') + ' projects, and the Firestore rules must be published.'
+        : 'Couldn’t ' + verb + '. Check your connection and try again.');
     }
   });
 
-  // ---------- Who is signed in, and may they create projects? ----------
+  // Edit mode: put the saved project into the form
+  function fillForm(d) {
+    $('npName').value = d.name || '';
+    $('npCommunity').value = d.community || '';
+    $('npLot').value = d.lot || '';
+    $('npAddress').value = d.address || '';
+    $('npDesc').value = d.description || '';
+    $('npDate').value = d.date || '';
+    $('npStart').value = d.startDate || '';
+    $('npEnd').value = d.endDate || '';
+    $('npPhases').textContent = '';
+    (Array.isArray(d.phases) ? d.phases : []).forEach(ph => { if (ph && ph.name) addPhase(ph.name, ph.start, ph.end); });
+  }
+
+  // ---------- Who is signed in, and may they create (or edit) projects? ----------
   auth.onAuthStateChanged(async user => {
     if (!user) { location.replace('login.html'); return; }
     try {
@@ -148,9 +175,19 @@
       const [w, m] = await Promise.all([db.doc('workspaces/' + st.wid).get(), db.doc('workspaces/' + st.wid + '/members/' + user.uid).get()]);
       const me = m.exists ? m.data() : {};
       st.canEdit = (w.exists && w.data().ownerId === user.uid) || me.admin === true || me.canEdit === true;
+      if (editId && st.canEdit) {
+        const snap = await db.doc('projects/' + editId).get();
+        if (!snap.exists || snap.data().workspaceId !== st.wid) {
+          showMsg('That project was not found. It may have been deleted.');
+          $('npSave').disabled = true;
+          st.ready = true;
+          return;
+        }
+        fillForm(snap.data());
+      }
       st.ready = true;
       if (!st.canEdit) {
-        showMsg('Only editors can create projects. Ask a workspace admin for editing access.');
+        showMsg(NO_EDIT_MSG);
         $('npSave').disabled = true;
       }
     } catch (ex) {

@@ -208,6 +208,8 @@ html.signed-in body.page-home .fnav, html.likely-signed-in:not(.auth-ready) body
 .db-btn--main { background: var(--amber); border-color: transparent; color: var(--amber-ink); }
 .db-btn--main:hover { background: #ffc54d; border-color: transparent; }
 .db-btn[disabled], .db-btn[aria-disabled="true"] { opacity: .45; cursor: not-allowed; }
+.db-btn--danger { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 60%, transparent); }
+.db-btn--danger:hover { border-color: var(--danger); background: color-mix(in srgb, var(--danger) 12%, transparent); }
 
 /* ---------- Project progress: a tape measure that fills with amber ---------- */
 .db-tape {
@@ -302,6 +304,7 @@ html.signed-in body.page-home .fnav, html.likely-signed-in:not(.auth-ready) body
 .db-back:hover { color: #fff; }
 .db-detail-top { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 16px; align-items: start; padding: 22px; margin-bottom: 16px; }
 .db-detail-top h2 { font-size: clamp(32px, 4vw, 44px); overflow-wrap: anywhere; }
+.db-detail-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
 .db-dl { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 14px 24px; margin: 18px 0 0; grid-column: 1 / -1; }
 .db-dl dt { color: var(--faint); font-size: 12px; font-weight: 600; }
 .db-dl dd { margin: 3px 0 0; font-size: 15px; overflow-wrap: anywhere; }

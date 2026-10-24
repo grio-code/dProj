@@ -98,6 +98,7 @@ service cloud.firestore {
     // ---------- projects ----------
     // A project (made on newProject.html) holds its details and timeline. Its punch lists are jobs with projectId set.
     // Everyone in the workspace can see projects; editors (admins + members allowed to edit) can create and change them.
+    // Only admins (the owner + anyone made an admin) can delete one.
     match /projects/{projectId} {
       allow get: if isMember(resource.data.workspaceId);
       allow list: if isMember(resource.data.workspaceId);
@@ -107,7 +108,7 @@ service cloud.firestore {
       allow update: if canEditWs(resource.data.workspaceId)
                     && request.resource.data.workspaceId == resource.data.workspaceId
                     && request.resource.data.ownerId == resource.data.ownerId;
-      allow delete: if canEditWs(resource.data.workspaceId);
+      allow delete: if isAdmin(resource.data.workspaceId);
     }
 
     // ---------- lists ----------

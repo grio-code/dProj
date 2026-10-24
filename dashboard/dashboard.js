@@ -19,7 +19,8 @@
 //   jobs/{id}/items/{itemId}                 done, doneAt, signedBy, trade        (their status)
 //   jobs/{id}/rooms/{roomId}                 name
 //   jobs/{id}/hidden/{roomId}                hidden
-// The only write is "Move to project" for a punch list that isn't in a project yet (jobs/{id}.projectId).
+// Writes: "Move to project" for a punch list that isn't in a project yet (jobs/{id}.projectId), and "Delete project" (admins only).
+// Editing a project happens on new-project.html?edit={id}.
 // Weather comes from Open-Meteo (free, no key), using the browser's location.
 (() => {
   'use strict';
@@ -38,7 +39,7 @@
 
   const st = {
     user: null, profile: {}, wid: '', ws: {}, members: [], projects: [], jobs: [], loose: [],
-    canEdit: false, loaded: false, allTasks: false, projectsFailed: false
+    canEdit: false, isAdmin: false, loaded: false, allTasks: false, projectsFailed: false
   };
 
   // ---------- Small helpers ----------
@@ -129,7 +130,8 @@
     st.ws = w.exists ? w.data() : {};
     st.members = ms.docs.map(d => ({ id: d.id, ...d.data() }));
     const me = st.members.find(m => m.id === user.uid) || {};
-    st.canEdit = st.ws.ownerId === user.uid || me.admin === true || me.canEdit === true;
+    st.isAdmin = st.ws.ownerId === user.uid || me.admin === true; // the owner plus anyone made an admin in Settings
+    st.canEdit = st.isAdmin || me.canEdit === true;
 
     const [ps, js] = await Promise.all([
       db.collection('projects').where('workspaceId', '==', st.wid).get().catch(e => { console.error('Projects:', e); st.projectsFailed = true; return { docs: [] }; }),
@@ -480,6 +482,31 @@
     return wrap;
   }
 
+  // Delete a project (admins only; the Firestore rules enforce it too).
+  // Its punch lists are kept: they lose their project and show up under "Punch lists not in a project".
+  async function deleteProject(p, btn) {
+    if (!st.isAdmin) { toast('Only workspace admins can delete projects.'); return; }
+    const n = (p._lists || []).length;
+    const msg = 'Delete “' + projName(p) + '”?\n\n'
+      + (n ? 'Its ' + plural(n, 'punch list') + ' will not be deleted. ' + (n === 1 ? 'It' : 'They') + ' will move to “Punch lists not in a project”.\n\n' : '')
+      + 'This can’t be undone.';
+    if (!confirm(msg)) return;
+    btn.disabled = true;
+    try {
+      await db.doc('projects/' + p.id).delete();
+      st.projects = st.projects.filter(x => x.id !== p.id);
+      st.jobs.forEach(j => { if (j.projectId === p.id) j.projectId = ''; }); // local view only; the lists keep a dead link until moved
+      link_();
+      location.hash = '#projects';
+      renderAll();
+      toast('Deleted “' + projName(p) + '”.');
+    } catch (ex) {
+      console.error(ex);
+      btn.disabled = false;
+      toast(ex && ex.code === 'permission-denied' ? 'Only workspace admins can delete projects. Make sure the Firestore rules are republished.' : 'Couldn’t delete the project. Check your connection.');
+    }
+  }
+
   // Timeline: start and target dates, and each phase marked done / in progress / upcoming
   function timelineBox(p) {
     const phases = Array.isArray(p.phases) ? p.phases.filter(x => x && x.name) : [];
@@ -530,7 +557,18 @@
     const head = el('div');
     head.append(el('h2', null, projName(p)), el('p', 'db-sub', p.address || 'No address yet'));
     top.appendChild(head);
-    if (st.canEdit) top.appendChild(link(newList, 'db-btn db-btn--main', 'New punch list'));
+    const actions = el('div', 'db-detail-actions');
+    if (st.canEdit) {
+      actions.appendChild(link(newList, 'db-btn db-btn--main', 'New punch list'));
+      actions.appendChild(link('new-project.html?edit=' + encodeURIComponent(p.id), 'db-btn', 'Edit project'));
+    }
+    if (st.isAdmin) {
+      const del = el('button', 'db-btn db-btn--danger', 'Delete project');
+      del.type = 'button';
+      del.addEventListener('click', () => deleteProject(p, del));
+      actions.appendChild(del);
+    }
+    if (actions.children.length) top.appendChild(actions);
     const dl = el('dl', 'db-dl');
     [['Lot', p.lot || '—'], ['Community', p.community || '—'], ['Project date', fmtDay(p.date)],
      ['Progress', c.total ? (c.total - c.open) + ' of ' + c.total + ' items (' + c.pct + '%)' : '—'],
