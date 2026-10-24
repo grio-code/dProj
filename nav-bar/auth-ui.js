@@ -1,5 +1,6 @@
 // Top-bar sign-in state, shared by every page.
-// Signed in, the bar reads:   INTEGRATE / [workspace logo] Workspace name   |   [photo] Hello, Name   |   Log out
+// Signed in, the bar reads:   INTEGRATE / [workspace logo] Workspace name   |   [photo] Hello, Name
+// (Sign out lives at the bottom of settings.html. The dashboard on index.html hides this bar and shows its own sidebar.)
 // The workspace and the greeting both open settings.html (workspace section / your profile section).
 (() => {
   if (!window.firebase) return;
@@ -38,17 +39,6 @@
   hello.title = 'Your settings';
   center.appendChild(hello);
 
-  // Log out button (only visible when signed in)
-  const out = document.createElement('button');
-  out.type = 'button';
-  out.className = 'fnav-btn fnav-btn--ghost fnav-out';
-  out.textContent = 'Log out';
-  out.addEventListener('click', () => {
-    clearCache();
-    auth.signOut().then(() => { location.href = 'index.html'; });
-  });
-  actions.appendChild(out);
-
   // Keep page content clear of the top bar, since the workspace line makes it taller
   function setNavH() {
     root.style.setProperty('--nav-h', fnav.offsetHeight + 'px');
@@ -59,11 +49,6 @@
   // Cached for the browser session so the bar doesn't flicker between pages.
   // settings.html calls window.fnavRefresh() after saving so the bar picks up changes right away.
   const cacheKey = uid => 'fnav-info:' + uid;
-  function clearCache() {
-    try {
-      Object.keys(sessionStorage).filter(k => k.startsWith('fnav-')).forEach(k => sessionStorage.removeItem(k));
-    } catch (e) {}
-  }
   async function loadInfo(uid, fresh) {
     if (!fresh) {
       try { const c = sessionStorage.getItem(cacheKey(uid)); if (c) return JSON.parse(c); } catch (e) {}

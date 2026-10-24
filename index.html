@@ -17,7 +17,7 @@
 
 <link href="nav-bar/nav.css" rel="stylesheet">
 <link href="home/index.css" rel="stylesheet">
-<link href="dashboard/dashboard.css?v=3" rel="stylesheet">
+<link href="dashboard/dashboard.css?v=4" rel="stylesheet">
 <!-- If this browser was signed in last time, show the dashboard (not the marketing page) while Firebase checks -->
 <script>try { if (localStorage.getItem('int-signed-in') === '1') document.documentElement.classList.add('likely-signed-in'); } catch (e) {}</script>
 
@@ -28,11 +28,11 @@
 <script src="firebase-starter/firebase-config.js"></script>
 <script src="nav-bar/nav.js" defer></script>
 <script src="nav-bar/auth-ui.js" defer></script>
-<script src="dashboard/dashboard.js?v=3" defer></script>
+<script src="dashboard/dashboard.js?v=4" defer></script>
 
 
 </head>
-<body>
+<body class="page-home">
 
 <!-- The tools. Outlines come from the page; the two fill colors come from each tool's --f1 and --f2 -->
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -156,8 +156,13 @@
 <div class="db-bg" aria-hidden="true"><div class="glow g1"></div><div class="glow g2"></div><div class="glow g3"></div><div class="glow g4"></div><div class="grid"></div></div>
 
 <div class="db" id="db">
-  <aside class="db-side">
-    <div class="db-jobs db-glass">
+  <aside class="db-side db-glass">
+    <!-- Logo and workspace (the dashboard has no top bar) -->
+    <div class="db-brand">
+      <a class="db-logo" href="index.html#dashboard">Integrate</a>
+      <a class="db-ws" id="dbWs" href="settings.html#workspace" title="Workspace settings"><span class="db-ws-logo" id="dbWsLogo" aria-hidden="true"></span><span class="db-ws-name" id="dbWsName">&nbsp;</span></a>
+    </div>
+    <div class="db-jobs">
       <label for="dbJob">Project</label>
       <div class="db-select">
         <select id="dbJob">
@@ -166,14 +171,16 @@
       </div>
       <a class="db-btn db-btn--main db-newproj" id="dbNewProj" href="new-project.html">New project</a>
     </div>
-  <nav class="db-nav db-glass" aria-label="Workspace sections">
+  <nav class="db-nav" aria-label="Workspace sections">
     <a href="#dashboard" data-view="dashboard"><svg viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="7" height="9" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="5" rx="1.5"/><rect x="13.5" y="11.5" width="7" height="9" rx="1.5"/><rect x="3.5" y="15.5" width="7" height="5" rx="1.5"/></svg>Dashboard</a>
     <a href="#projects" data-view="projects"><svg viewBox="0 0 24 24"><path d="M3.5 20.5h17"/><path d="M5.5 20.5V9.5l6.5-5 6.5 5v11"/><path d="M10 20.5v-5h4v5"/></svg>My projects</a>
     <hr>
     <a href="#schedule" data-view="schedule"><svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15.5" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>Schedule<span class="soon">Soon</span></a>
-    <a href="#files" data-view="files"><svg viewBox="0 0 24 24"><path d="M3.5 7.5a2 2 0 0 1 2-2h4l2 2.5h7a2 2 0 0 1 2 2v8.5a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/></svg>Files</a>
+    <a href="#files" data-view="files"><svg viewBox="0 0 24 24"><path d="M3.5 7.5a2 2 0 0 1 2-2h4l2 2.5h7a2 2 0 0 1 2 2v8.5a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/></svg>Files<span class="soon">Soon</span></a>
     <a href="#selections" data-view="selections"><svg viewBox="0 0 24 24"><circle cx="8" cy="8" r="3.5"/><circle cx="16" cy="16" r="3.5"/><path d="M13 6.5h7.5M3.5 17.5H11"/></svg>Selections<span class="soon">Soon</span></a>
     <a href="#messages" data-view="messages"><svg viewBox="0 0 24 24"><path d="M4 5.5h16v10H9l-5 4z"/></svg>Messages<span class="soon">Soon</span></a>
+    <hr>
+    <a href="settings.html" class="db-nav-settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M5.5 18.5l1.7-1.7M16.8 7.2l1.7-1.7"/></svg>Settings</a>
   </nav>
   </aside>
 
@@ -211,10 +218,10 @@
         </section>
       </div>
 
-      <!-- <section class="db-panel db-glass" id="progress" aria-labelledby="progH">
+      <section class="db-panel db-glass" id="progress" aria-labelledby="progH">
         <div class="db-panel-h"><h2 id="progH">Your projects</h2><a href="#projects">See all projects</a></div>
         <ul class="db-progress" id="dbProgress"></ul>
-      </section> -->
+      </section>
     </section>
 
     <!-- Projects: every punch list in the workspace, and one project's details -->
@@ -233,12 +240,12 @@
       </div>
       <div id="projDetail" hidden></div>
     </section>
-
+    
     <section class="db-view" id="v-schedule" aria-labelledby="schH" hidden>
       <div class="db-soon db-glass">
         <svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15.5" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>
         <span class="db-pill">Coming soon</span>
-        <h3 id="schH">Schedule</h3>
+        <h3 id="schH">My Schedule</h3>
         <p>Plan each project's phases and trade visits on one calendar, so everyone knows who's on site and when.</p>
       </div>
     </section>

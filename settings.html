@@ -27,7 +27,7 @@
 
 <script src="nav-bar/nav.js" defer></script>
 <script src="nav-bar/auth-ui.js" defer></script>
-<script src="settings/settings.js?v=2" defer></script>
+<script src="settings/settings.js?v=3" defer></script>
 </head>
 <body>
 
@@ -68,6 +68,7 @@
       <a href="#members">Members</a>
       <a href="#archive">Archive</a>
       <a href="#admin" class="admin-only">Admin controls</a>
+      <a href="#signout">Sign out</a>
     </nav>
 
     <div class="st-main">
@@ -212,6 +213,17 @@
               <button type="button" class="btn" id="copyLink">Copy</button>
             </div>
           </div>
+        </div>
+      </section>
+
+      <!-- ============ 5. Sign out ============ -->
+      <section class="st-card" id="signout" aria-labelledby="outH">
+        <header class="st-card-h">
+          <h2 id="outH">Sign out</h2>
+          <p>Sign out of Integrate on this device. Your projects and lists stay in the workspace.</p>
+        </header>
+        <div class="st-actions">
+          <button type="button" class="btn btn--danger" id="signOutBtn">Sign out</button>
         </div>
       </section>
 

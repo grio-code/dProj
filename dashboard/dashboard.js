@@ -142,6 +142,7 @@
     link_();
 
     renderHello();
+    renderBrand();
     renderAll(); // first pass from the saved counts, so the page fills in fast
     await loadItems(st.jobs.slice(0, MAX_DETAIL_JOBS));
     st.loaded = true;
@@ -229,6 +230,16 @@
     p.textContent = part + ', ';
     p.appendChild(el('b', null, first));
     p.appendChild(document.createTextNode('. ' + date + (st.ws.name ? ' at ' + st.ws.name : '') + '.'));
+  }
+
+  // Workspace logo and name at the top of the sidebar (the dashboard has no top bar)
+  function renderBrand() {
+    const name = st.ws.name || 'Workspace';
+    $('dbWsName').textContent = name;
+    const box = $('dbWsLogo');
+    box.textContent = '';
+    if (st.ws.logo) { const img = new Image(); img.alt = ''; img.src = st.ws.logo; box.appendChild(img); }
+    else box.textContent = name.trim().charAt(0).toUpperCase();
   }
 
   function renderAll() {
