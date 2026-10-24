@@ -10,15 +10,26 @@ service cloud.firestore {
     function isOwner(wid) {
       return signedIn() && get(/databases/$(database)/documents/workspaces/$(wid)).data.ownerId == request.auth.uid;
     }
+    function memberDoc(wid) {
+      return get(/databases/$(database)/documents/workspaces/$(wid)/members/$(request.auth.uid));
+    }
+    function ownerOf(wid) { return get(/databases/$(database)/documents/workspaces/$(wid)).data.ownerId; }
+    // Admins run the workspace: the owner (who created it) plus any member an admin has made an admin
+    // (for example a second founder or CEO). Admins can rename the workspace, change its logo, invite and
+    // remove people, choose who can edit lists, and make other members admins.
+    function isAdmin(wid) {
+      return signedIn() && (isOwner(wid)
+        || (isMember(wid) && memberDoc(wid).data.get('admin', false) == true));
+    }
     // Signed in with a verified email that has a pending invitation to this workspace
     function isInvited(wid) {
       return signedIn() && request.auth.token.email_verified == true
         && exists(/databases/$(database)/documents/workspaces/$(wid)/invites/$(request.auth.token.email.lower()));
     }
-    // Can change lists: the workspace owner, or a member the owner switched "Can edit lists" on for (Settings > Members)
+    // Can change lists: admins, or a member an admin switched "Can edit lists" on for (Settings > Members)
     function canEditWs(wid) {
-      return signedIn() && (isOwner(wid)
-        || (isMember(wid) && get(/databases/$(database)/documents/workspaces/$(wid)/members/$(request.auth.uid)).data.get('canEdit', false) == true));
+      return signedIn() && (isAdmin(wid)
+        || (isMember(wid) && memberDoc(wid).data.get('canEdit', false) == true));
     }
     function jobWs(jobId) { return get(/databases/$(database)/documents/jobs/$(jobId)).data.workspaceId; }
     // The write changes only these fields
@@ -32,7 +43,7 @@ service cloud.firestore {
       // Anyone can create their own workspace. Reading is one doc at a time (no listing everybody's workspaces).
       allow create: if signedIn() && request.resource.data.ownerId == request.auth.uid && validName(request.resource.data.name);
       allow get: if signedIn() && (resource.data.ownerId == request.auth.uid || isMember(wid) || isInvited(wid));
-      allow update: if signedIn() && resource.data.ownerId == request.auth.uid
+      allow update: if isAdmin(wid)
                     && request.resource.data.ownerId == resource.data.ownerId
                     && validName(request.resource.data.name)
                     && validLogo(request.resource.data);
@@ -41,19 +52,24 @@ service cloud.firestore {
       match /members/{memberId} {
         allow read: if isMember(wid);
         // You can only add yourself: as owner of a workspace you created, or as a member if you were invited
-        // Nobody can give themselves editing access when they join
+        // Nobody can give themselves editing or admin access when they join
         allow create: if signedIn() && memberId == request.auth.uid
                       && request.resource.data.get('canEdit', false) == false
+                      && request.resource.data.get('admin', false) == false
                       && ((isOwner(wid) && request.resource.data.role == 'owner')
                           || (isInvited(wid) && request.resource.data.role == 'member'));
-        // Edit your own profile, but never your own role or editing access.
-        // The owner can switch "Can edit lists" on or off for other members (and change nothing else on their record).
+        // Edit your own profile, but never your own role, editing access or admin access.
+        // Admins can switch "Can edit lists" and "Admin" on or off for other members (and change nothing else on
+        // their record). The owner who created the workspace is always an admin: nobody can change or remove them.
         allow update: if (signedIn() && memberId == request.auth.uid
                           && request.resource.data.role == resource.data.role
-                          && request.resource.data.get('canEdit', false) == resource.data.get('canEdit', false))
-                      || (isOwner(wid) && memberId != request.auth.uid
-                          && onlyChanges(['canEdit']) && request.resource.data.canEdit is bool);
-        allow delete: if isOwner(wid) || (signedIn() && memberId == request.auth.uid);
+                          && request.resource.data.get('canEdit', false) == resource.data.get('canEdit', false)
+                          && request.resource.data.get('admin', false) == resource.data.get('admin', false))
+                      || (isAdmin(wid) && memberId != request.auth.uid && memberId != ownerOf(wid)
+                          && onlyChanges(['canEdit', 'admin'])
+                          && request.resource.data.get('canEdit', false) is bool
+                          && request.resource.data.get('admin', false) is bool);
+        allow delete: if (isAdmin(wid) && memberId != ownerOf(wid)) || (signedIn() && memberId == request.auth.uid);
       }
 
       // One doc per invited email (the doc id is the lowercase email)
@@ -80,7 +96,7 @@ service cloud.firestore {
     }
 
     // ---------- lists ----------
-    // Editors (owner + members allowed to edit) can change anything on a list.
+    // Editors (admins + members allowed to edit) can change anything on a list.
     // Everyone else, including people who open a shared link, can only check items off.
     match /jobs/{jobId} {
       // Anyone with the link can open one list (this is what shared links use)
