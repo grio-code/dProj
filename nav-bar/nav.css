@@ -468,7 +468,7 @@ html.signed-in .fnav-hello { display: flex; }
 }
 /* Browsers without blur support get a solid dark bar instead of a see-through one */
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  .fnav { background: rgba(14, 18, 17, .92); }
+  .fnav { background: rgba(22, 22, 22, .94); }
 }
 
 /* Buttons: white outline, and an amber "Sign up" like the main button on the home page */
@@ -494,7 +494,7 @@ html.signed-in .fnav-hello { display: flex; }
 .dock {
   --bg: #fff;                           /* icon color */
   --ink: #fff;
-  --sheet: rgba(18, 24, 23, .85);       /* create menu */
+  --sheet: rgba(30, 30, 30, .72);       /* create menu: heavier glass */
   --rule: rgba(255, 255, 255, .16);
   --chip: rgba(141, 184, 222, .16);
   --chip-ink: #8db8de;
@@ -507,7 +507,7 @@ html.signed-in .fnav-hello { display: flex; }
 .dock:hover .dock-blob { transform: translateX(6px); }  /* stretches the gooey neck between bar and + */
 
 /* Hover labels and the create menu: dark glass with white text */
-.dock-tip { background: rgba(18, 24, 23, .9); color: #fff; border: 1px solid rgba(255, 255, 255, .14); }
+.dock-tip { background: rgba(30, 30, 30, .72); -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px); color: #fff; border: 1px solid rgba(255, 255, 255, .14); }
 .dock-menu {
   border-color: rgba(255, 255, 255, .14);
   -webkit-backdrop-filter: blur(18px);

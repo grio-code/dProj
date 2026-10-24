@@ -24,7 +24,7 @@ body {
 /* Colors for everything on the page except the top bar and dock */
 body > :not(.fnav):not(.dock):not(svg) {
   --bg: rgba(0, 0, 0, .34);             /* fields and sunken areas */
-  --sheet: rgba(18, 24, 23, .62);       /* cards: dark glass over the glows */
+  --sheet: rgba(255, 255, 255, .07);    /* cards: frosted glass (same tint as the top bar) */
   --ink: #fff;
   --muted: rgba(255, 255, 255, .68);
   --rule: rgba(255, 255, 255, .16);
@@ -36,12 +36,12 @@ body > :not(.fnav):not(.dock):not(svg) {
   --danger: #ff8a7a;
   --focus: #fff;
   /* login / sign-up / workspace pages */
-  --lg-surface: rgba(18, 24, 23, .62);
+  --lg-surface: rgba(255, 255, 255, .07);
   --lg-line: rgba(255, 255, 255, .16);
   --lg-text: #fff;
   --lg-muted: rgba(255, 255, 255, .7);
   /* solid versions, for text drawn on top of a colored fill */
-  --solid: #0d1312;
+  --solid: #121212;
   color-scheme: dark;
   color: var(--ink);
 }
@@ -139,7 +139,7 @@ input::placeholder, textarea::placeholder { color: rgba(255, 255, 255, .45); }
 .login-form input:focus-visible, .ws-form textarea:focus-visible, .f input:focus-visible, .f textarea:focus-visible,
 .jobinfo input:focus-visible, .jobinfo textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; border-color: transparent; }
 /* Native dropdown lists can't be see-through, so give the options a solid dark background */
-option { background: #151a19; color: #fff; }
+option { background: #1c1c1c; color: #fff; }
 input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); opacity: .7; }
 
 /* ---------- Text on colored fills: --sheet is see-through now, so use a solid dark color instead ---------- */
@@ -148,11 +148,57 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); opaci
 .item input[type=checkbox]:checked::after { border-color: var(--solid); }
 .st-switch-ui::after { background: #fff; }
 
-/* ---------- Pop-ups: solid so they read clearly over the page ---------- */
+/* ---------- Pop-ups: heavier glass so they still read clearly over the page ---------- */
 .sig-back { background: rgba(0, 0, 0, .65); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
-.sig-box { background: #121817; border: 1px solid var(--rule); border-radius: 8px; }
-.st-menu-list { background: #121817; }
+.sig-box, .st-menu-list {
+  background: rgba(30, 30, 30, .72);
+  border: 1px solid rgba(255, 255, 255, .14);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  backdrop-filter: blur(24px) saturate(160%);
+  box-shadow: 0 20px 50px -16px rgba(0, 0, 0, .7), inset 0 1px 0 rgba(255, 255, 255, .08);
+}
+.sig-box { border-radius: 8px; }
 .toast { background: #f0b232; color: #231800; font-weight: 500; }
+
+/* ---------- Glass: the same frosted glass as the top bar ----------
+   Information boxes (cards, list rows, messages) and input boxes (text fields, text areas, dropdowns)
+   all use the top bar's recipe: a faint white tint, a thin light edge, and a blur of whatever is behind.
+   Pop-ups (signature box, menus) use a heavier glass above; the toast stays solid amber. */
+.login-card, .st-card, .room, ul.jobs a, .tip, .viewonly, .confirm.boxed, .st-msg, .st-result, .gbtn {
+  background: rgba(255, 255, 255, .07);
+  border-color: rgba(255, 255, 255, .14);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+  backdrop-filter: blur(18px) saturate(160%);
+  box-shadow: 0 10px 30px -12px rgba(0, 0, 0, .55), inset 0 1px 0 rgba(255, 255, 255, .08);
+}
+ul.jobs a:hover, .gbtn:hover { background: rgba(255, 255, 255, .10); }
+/* Section links in Settings: glass highlight for hover and the current section */
+.st-toc a:hover, .st-toc a.is-active { background: rgba(255, 255, 255, .07); -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px); }
+/* Badges and letters drawn on a white fill need dark text (the tokens they used are see-through now) */
+.role--admin, .st-pic.is-letter.st-pic--logo { color: var(--solid); }
+/* Every text box, text area and dropdown in the page content (not checkboxes, switches or file pickers) */
+body > :not(.fnav):not(.dock) :is(input:not([type=checkbox]):not([type=radio]):not([type=file]):not([type=range]):not([type=color]):not([type=hidden]), textarea, select) {
+  background: rgba(255, 255, 255, .06);
+  border: 1px solid rgba(255, 255, 255, .14);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+  backdrop-filter: blur(18px) saturate(160%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .06);
+  transition: background .2s, border-color .2s;
+}
+body > :not(.fnav):not(.dock) :is(input:not([type=checkbox]):not([type=radio]):not([type=file]):not([type=range]):not([type=color]):not([type=hidden]), textarea, select):hover {
+  border-color: rgba(255, 255, 255, .28);
+}
+body > :not(.fnav):not(.dock) :is(input:not([type=checkbox]):not([type=radio]):not([type=file]):not([type=range]):not([type=color]):not([type=hidden]), textarea, select):focus {
+  background: rgba(255, 255, 255, .10);
+}
+/* Read-only fields (username, email, invite link) are a touch fainter so they don't look editable */
+body > :not(.fnav):not(.dock) :is(input, textarea)[readonly] { background: rgba(255, 255, 255, .03); }
+/* Browsers without blur support get a solid dark fill instead of a see-through one */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .login-card, .st-card, .room, ul.jobs a, .tip, .viewonly, .confirm.boxed, .st-msg, .st-result, .gbtn,
+  .sig-box, .st-menu-list,
+  body > :not(.fnav):not(.dock) :is(input, textarea, select) { background: rgba(22, 22, 22, .94); }
+}
 
 /* ---------- Links ---------- */
 .link, .back { color: var(--chip-ink); }
