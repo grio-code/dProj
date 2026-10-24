@@ -1,5 +1,7 @@
 // ©Gianna G. Dimperio 2026
 
+// ©Gianna G. Dimperio 2026
+
 // Workspace dashboard: what index.html shows once someone is signed in.
 //
 // Projects hold punch lists. A project is made on new-project.html; its punch lists are jobs with projectId set,
@@ -32,7 +34,8 @@
   if (!firebase.apps.length) firebase.initializeApp(window.FIREBASE_CONFIG);
   const auth = firebase.auth();
   const db = firebase.firestore();
-  const $ = id => document.getElementById(id);
+  // A panel missing from index.html gives a harmless stand-in instead of crashing the page (so Projects always loads)
+  const $ = id => document.getElementById(id) || (console.warn('index.html has no #' + id), document.createElement('div'));
   const root = document.getElementById('db');
   if (!root) return;
 
@@ -680,7 +683,7 @@
   }
 
   // ---------- Sections (from the address) ----------
-  const VIEWS = ['dashboard', 'projects', 'schedule', 'files', 'selections', 'messages'];
+  const VIEWS = ['dashboard', 'projects', 'dailylogs', 'schedule', 'files', 'selections', 'messages'];
   function route() {
     const h = decodeURIComponent(location.hash.slice(1));
     let [view, sub] = h.split('/');

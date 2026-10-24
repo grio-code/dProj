@@ -1,5 +1,7 @@
 /* ©Gianna G. Dimperio 2026 */
 
+/* ©Gianna G. Dimperio 2026 */
+
 :root {
   --bg: #eceeea;
   --sheet: #f8f9f6;
@@ -523,3 +525,6 @@ html.signed-in .fnav-hello { display: flex; }
   font-size: 13px;
   opacity: .7;
 }
+
+/* "Soon" tag next to a menu item that isn't built yet */
+.dock-menu .soon { margin-left: 8px; font-size: 11px; font-weight: 500; opacity: .6; }
