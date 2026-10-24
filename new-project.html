@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>New project · Integrate</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Integrate">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#0d1820">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+
+<link href="nav-bar/nav.css" rel="stylesheet">
+<link href="new-project/new-project.css?v=1" rel="stylesheet">
+<link href="theme.css?v=2" rel="stylesheet"> <!-- home page look; keep this the last stylesheet -->
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="firebase-starter/firebase-config.js"></script>
+
+<script src="nav-bar/nav.js" defer></script>
+<script src="nav-bar/auth-ui.js" defer></script>
+<script src="new-project/new-project.js?v=1" defer></script>
+</head>
+<body>
+
+<!--  animated backdrop  -->
+<div class="backdrop" aria-hidden="true"><i class="bd-glow bd-g1"></i><i class="bd-glow bd-g2"></i><i class="bd-glow bd-g3"></i><i class="bd-glow bd-g4"></i><i class="bd-grid"></i></div>
+<!-- Goo filter for the dock (include once) -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <filter id="fn-goo">
+    <feGaussianBlur in="SourceGraphic" stdDeviation="8" result="b"/>
+    <feColorMatrix in="b" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 22 -10" result="g"/>
+    <feComposite in="SourceGraphic" in2="g" operator="atop"/>
+  </filter>
+</svg>
+
+<!-- Top bar -->
+<header class="fnav" id="fnav">
+  <a class="fnav-brand" href="index.html">Integrate</a>
+  <nav class="fnav-links" id="fnavLinks" aria-label="Primary"><span class="fnav-pill" aria-hidden="true"></span></nav>
+  <div class="fnav-actions">
+    <a class="fnav-btn" href="login.html">Login</a>
+    <a class="fnav-btn" href="signup.html">Sign up</a>
+  </div>
+</header>
+
+<main class="wrap np">
+  <a class="np-back" href="index.html#dashboard">‹ Dashboard</a>
+  <h1>New project</h1>
+  <p class="np-lede">Add the job's details and timeline. Its punch list is created with it, so you can start adding items right after.</p>
+
+  <div class="np-msg" id="npMsg" role="alert" hidden></div>
+
+  <form id="npForm" novalidate>
+    <section class="np-card" aria-labelledby="npDetailsH">
+      <h2 id="npDetailsH">Project details</h2>
+      <div class="np-grid">
+        <div class="f np-wide">
+          <label for="npName">Project name</label>
+          <input id="npName" maxlength="80" required placeholder="Smith residence" autocomplete="off">
+          <span class="f-err" id="npNameErr"></span>
+        </div>
+        <div class="f">
+          <label for="npCommunity">Community</label>
+          <input id="npCommunity" maxlength="60" placeholder="Oakwood" autocomplete="off">
+        </div>
+        <div class="f">
+          <label for="npLot">Lot</label>
+          <input id="npLot" maxlength="20" placeholder="12" autocomplete="off">
+        </div>
+        <div class="f np-wide">
+          <label for="npAddress">Address</label>
+          <input id="npAddress" maxlength="120" placeholder="418 Birch Lane" autocomplete="street-address">
+        </div>
+        <div class="f">
+          <label for="npDate">Project date</label>
+          <input id="npDate" type="date">
+          <span class="f-hint">Shown on the punch list.</span>
+        </div>
+        <div class="f np-wide">
+          <label for="npDesc">Notes</label>
+          <textarea id="npDesc" rows="3" maxlength="980" placeholder="Scope, buyer, anything the crew should know"></textarea>
+        </div>
+      </div>
+    </section>
+
+    <section class="np-card" aria-labelledby="npTimeH">
+      <h2 id="npTimeH">Timeline</h2>
+      <div class="np-grid">
+        <div class="f">
+          <label for="npStart">Start date</label>
+          <input id="npStart" type="date">
+        </div>
+        <div class="f">
+          <label for="npEnd">Target completion</label>
+          <input id="npEnd" type="date">
+          <span class="f-err" id="npEndErr"></span>
+        </div>
+      </div>
+
+      <div class="np-phases-h">
+        <h3>Phases</h3>
+        <p class="f-hint">Optional. Break the job into stages with their own dates.</p>
+      </div>
+      <ol class="np-phases" id="npPhases"></ol>
+      <div class="np-row">
+        <button type="button" class="btn" id="npAddPhase">Add phase</button>
+        <button type="button" class="btn btn--quiet" id="npStdPhases">Use standard phases</button>
+      </div>
+      <span class="f-err" id="npPhaseErr"></span>
+    </section>
+
+    <div class="np-actions">
+      <button type="submit" class="btn btn--primary" id="npSave">Create project</button>
+      <a class="btn" href="index.html#dashboard">Cancel</a>
+    </div>
+  </form>
+</main>
+
+<!-- Bottom dock -->
+<nav class="dock" id="dock" aria-label="Quick navigation">
+  <div class="dock-shape" aria-hidden="true"><span class="dock-bar"></span><span class="dock-blob"></span></div>
+  <div class="dock-items">
+    <a href="index.html" aria-label="Home">
+      <svg class="fn-icon" viewBox="0 0 24 24"><path d="M4 11.2 12 4l8 7.2"/><path d="M6 9.8v9.7h12V9.8"/><path d="M10 19.5v-5h4v5"/></svg>
+      <span class="dock-tip">Home</span>
+    </a>
+    <a href="allLists.html" aria-label="Lists">
+      <svg class="fn-icon" viewBox="0 0 24 24"><circle cx="5" cy="6.5" r="1.1"/><circle cx="5" cy="12" r="1.1"/><circle cx="5" cy="17.5" r="1.1"/><path d="M9.5 6.5H20M9.5 12H20M9.5 17.5H20"/></svg>
+      <span class="dock-tip">My Lists</span>
+    </a>
+    <button class="dock-fab" id="dockFab" aria-label="Create" aria-expanded="false" aria-controls="dockMenu">
+      <svg class="fn-icon" viewBox="0 0 24 24" style="stroke-width:2"><path d="M12 5v14M5 12h14"/></svg>
+    </button>
+  </div>
+  <div class="dock-menu" id="dockMenu" role="menu">
+    <button role="menuitem" onclick="location.href='new-project.html'">New Project</button>
+    <button role="menuitem" onclick="location.href='allLists.html?new=1'">New Punch List</button>
+  </div>
+</nav>
+</body>
+</html>

@@ -397,7 +397,7 @@ t === sel ? " selected" : ""
 function updateTitle() {
   const m = state.meta;
   const desc = (m.description || "").replace(/\s+/g, " ").trim();
-  document.getElementById("jobTitle").textContent = [m.community, m.lot, desc].filter(Boolean).join(" - ") || "New List";
+  document.getElementById("jobTitle").textContent = m.name || [m.community, m.lot, desc].filter(Boolean).join(" - ") || "New List"; // name comes from New Project
 }
 
 // Redraws the whole punch list screen from the current state. Called after almost every change.
@@ -515,7 +515,7 @@ function listText() {
 function jobRow(id, j) {
   // CHANGED: description added after Lot and Community (line breaks turned into spaces), e.g. "Lot 12 · Oakwood · Final walk"
   const desc = (j.description || "").replace(/\s+/g, " ").trim();
-  const title = [j.lot && "Lot " + j.lot, j.community, desc].filter(Boolean).join(" · ") || "Untitled punch list";
+  const title = j.name || [j.lot && "Lot " + j.lot, j.community, desc].filter(Boolean).join(" · ") || "Untitled punch list"; // name comes from New Project
   const sub = [j.address, j.date && fmtDay(j.date)].filter(Boolean).join(" · ");
   const pill = typeof j.openCount === "number" && j.totalCount ? (j.openCount ? `<span class="pill">${j.openCount} open</span>` : `<span class="pill clear">Clear</span>`) : `<span class="pill none">No items</span>`;
   return `<li><a href="?job=${encodeURIComponent(id)}" data-job="${esc(id)}" draggable="false"><span class="j-main"><span class="j-title">${esc(title)}</span>${sub ? `<span class="j-sub">${esc(sub)}</span>` : ""}</span>${pill}</a></li>`;

@@ -1,0 +1,83 @@
+/* New project page. Fields and buttons get the app look from theme.css (loaded after this file). */
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+body { margin: 0; font-family: var(--f-body); font-size: 16px; line-height: 1.45; }
+button, input, textarea { font: inherit; color: inherit; }
+[hidden] { display: none !important; }
+.btn { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 0 16px; font: 600 15px var(--f-body); text-decoration: none; cursor: pointer; }
+.btn:disabled { opacity: .55; cursor: not-allowed; }
+
+.wrap {
+  max-width: 820px;
+  margin: 0 auto;
+  padding-inline: 16px;
+  padding-top: calc(var(--nav-h, 72px) + env(safe-area-inset-top, 0px) + 24px);
+  padding-bottom: calc(132px + env(safe-area-inset-bottom, 0px)); /* room for the dock */
+}
+.np h1 { margin: 6px 0 10px; }
+.np-back { color: #8db8de; font-size: 14px; text-decoration: none; }
+.np-back:hover { color: #fff; }
+.np-lede { margin: 0 0 24px; max-width: 36em; color: rgba(255, 255, 255, .72); }
+
+/* Frosted glass sections, the same recipe as the top bar */
+.np-card {
+  margin-bottom: 18px;
+  padding: 22px;
+  border: 1px solid rgba(255, 255, 255, .14);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, .07);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+  backdrop-filter: blur(18px) saturate(160%);
+  box-shadow: 0 10px 30px -12px rgba(0, 0, 0, .55), inset 0 1px 0 rgba(255, 255, 255, .08);
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .np-card { background: rgba(22, 22, 22, .94); }
+}
+.np-card h2 { margin: 0 0 16px; font: 700 28px/1 var(--f-display); }
+.np-card h3 { margin: 0; font: 700 20px/1.1 var(--f-display); }
+
+.np-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 18px; }
+.np-wide { grid-column: 1 / -1; }
+
+/* Fields */
+.f { display: grid; gap: 6px; align-content: start; min-width: 0; }
+.f label { font: 500 13px var(--f-body); color: rgba(255, 255, 255, .72); }
+.f input, .f textarea { width: 100%; min-width: 0; min-height: 46px; padding: 10px 12px; border-radius: 8px; font-size: 16px; } /* 16px stops iPhone zooming in */
+.f textarea { resize: vertical; min-height: 90px; }
+.f input[type="date"] { color-scheme: dark; }
+.f input[aria-invalid="true"] { border-color: var(--danger) !important; }
+.f-hint { font-size: 13px; color: rgba(255, 255, 255, .55); margin: 0; }
+.f-err { display: block; font-size: 13px; color: var(--danger); }
+.f-err:empty { display: none; }
+
+/* Phases */
+.np-phases-h { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; margin: 24px 0 10px; }
+.np-phases { list-style: none; margin: 0 0 12px; padding: 0; display: grid; gap: 10px; counter-reset: ph; }
+.np-phases:empty { display: none; }
+.np-phase {
+  counter-increment: ph;
+  display: grid; grid-template-columns: 28px minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1fr) auto; gap: 10px; align-items: end;
+  padding: 12px; border-radius: 10px; background: rgba(0, 0, 0, .22);
+}
+.np-phase::before { content: counter(ph); align-self: center; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; border: 1px solid rgba(255, 255, 255, .25); font: 700 14px var(--f-display); color: rgba(255, 255, 255, .7); }
+.np-phase .f label { font-size: 12px; }
+.np-phase .f input { min-height: 42px; }
+.np-rm { min-height: 42px; }
+
+.np-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.np-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 6px; }
+.np-actions .btn { min-height: 48px; padding: 0 22px; font-size: 16px; text-decoration: none; }
+
+.np-msg { margin-bottom: 18px; padding: 12px 14px; border-radius: 10px; border: 1px solid var(--danger); border-left-width: 4px; background: rgba(255, 255, 255, .07); }
+
+/* ---------- Phones ---------- */
+@media (max-width: 620px) {
+  .np-card { padding: 18px 16px; }
+  .np-grid { grid-template-columns: minmax(0, 1fr); }
+  .np-phase { grid-template-columns: 28px minmax(0, 1fr) minmax(0, 1fr); }
+  .np-phase::before { grid-row: 1; }
+  .np-phase .np-pname { grid-column: 2 / -1; }
+  .np-phase .np-pstart, .np-phase .np-pend { grid-column: 2 / -1; }
+  .np-phase .np-rm { grid-column: 2 / -1; justify-self: start; min-height: 36px; }
+  .np-actions .btn { flex: 1 1 auto; }
+}

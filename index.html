@@ -17,9 +17,7 @@
 
 <link href="nav-bar/nav.css" rel="stylesheet">
 <link href="home/index.css" rel="stylesheet">
-<link href="dashboard/dashboard.css?v=1" rel="stylesheet">
-<script src="dashboard/dashboard.js?v=1" defer></script>
-
+<link href="dashboard/dashboard.css?v=2" rel="stylesheet">
 <!-- If this browser was signed in last time, show the dashboard (not the marketing page) while Firebase checks -->
 <script>try { if (localStorage.getItem('int-signed-in') === '1') document.documentElement.classList.add('likely-signed-in'); } catch (e) {}</script>
 
@@ -30,6 +28,7 @@
 <script src="firebase-starter/firebase-config.js"></script>
 <script src="nav-bar/nav.js" defer></script>
 <script src="nav-bar/auth-ui.js" defer></script>
+<script src="dashboard/dashboard.js?v=2" defer></script>
 
 
 </head>
@@ -118,7 +117,8 @@
     </button>
   </div>
   <div class="dock-menu" id="dockMenu" role="menu">
-    <button role="menuitem" onclick="location.href='allLists.html?new=1'">New List</button>
+    <button role="menuitem" onclick="location.href='new-Project.html'">New Project</button>
+    <button role="menuitem" onclick="location.href='allLists.html?new=1'">New Punch List</button>
   </div>
 </nav>
 
@@ -156,6 +156,16 @@
 <div class="db-bg" aria-hidden="true"><div class="glow g1"></div><div class="glow g2"></div><div class="glow g3"></div><div class="glow g4"></div><div class="grid"></div></div>
 
 <div class="db" id="db">
+  <aside class="db-side">
+    <div class="db-jobs db-glass">
+      <label for="dbJob">Job</label>
+      <div class="db-select">
+        <select id="dbJob">
+          <option value="">All jobs</option>
+        </select>
+      </div>
+      <a class="db-btn db-btn--main db-newproj" id="dbNewProj" href="new-Project.html">New project</a>
+    </div>
   <nav class="db-nav db-glass" aria-label="Workspace sections">
     <a href="#dashboard" data-view="dashboard"><svg viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="7" height="9" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="5" rx="1.5"/><rect x="13.5" y="11.5" width="7" height="9" rx="1.5"/><rect x="3.5" y="15.5" width="7" height="5" rx="1.5"/></svg>Dashboard</a>
     <a href="#projects" data-view="projects"><svg viewBox="0 0 24 24"><path d="M3.5 20.5h17"/><path d="M5.5 20.5V9.5l6.5-5 6.5 5v11"/><path d="M10 20.5v-5h4v5"/></svg>Projects</a>
@@ -165,12 +175,16 @@
     <a href="#selections" data-view="selections"><svg viewBox="0 0 24 24"><circle cx="8" cy="8" r="3.5"/><circle cx="16" cy="16" r="3.5"/><path d="M13 6.5h7.5M3.5 17.5H11"/></svg>Selections<span class="soon">Soon</span></a>
     <a href="#messages" data-view="messages"><svg viewBox="0 0 24 24"><path d="M4 5.5h16v10H9l-5 4z"/></svg>Messages<span class="soon">Soon</span></a>
   </nav>
+  </aside>
 
   <div class="db-main">
 
     <!-- Dashboard: answers What needs my attention? What's happening? What should I do next? -->
     <section class="db-view" id="v-dashboard" aria-labelledby="dbBrief">
-      <p class="db-hello" id="dbHello">&nbsp;</p>
+      <div class="db-top">
+        <p class="db-hello" id="dbHello">&nbsp;</p>
+        <div class="db-wx" id="dbWeather" aria-live="polite"></div>
+      </div>
       <h1 class="db-brief is-loading" id="dbBrief">Getting your projects…</h1>
 
       <div class="db-facts db-glass" id="dbFacts">
@@ -180,25 +194,20 @@
         <div class="db-fact"><b id="fTeam">–</b><span>People in the workspace</span></div>
       </div>
 
-      <div class="db-cols">
-        <section class="db-panel db-glass" id="attention" aria-labelledby="attH">
-          <div class="db-panel-h"><h2 id="attH">Needs your attention</h2></div>
-          <ul class="db-flags" id="dbFlags"></ul>
-        </section>
-        <section class="db-panel db-glass" id="next" aria-labelledby="nextH">
-          <div class="db-panel-h"><h2 id="nextH">Up next</h2></div>
-          <ol class="db-next" id="dbNext"></ol>
-        </section>
-      </div>
+      <section class="db-panel db-glass db-attn" id="attention" aria-labelledby="attH">
+        <div class="db-panel-h"><h2 id="attH">Needs your attention</h2><span class="db-pill">Coming soon</span></div>
+        <p class="db-empty">This feature is coming soon. It will flag projects that have gone quiet, long punch lists and anything else waiting on you.</p>
+      </section>
 
       <div class="db-cols">
-        <section class="db-panel db-glass" id="progress" aria-labelledby="progH">
-          <div class="db-panel-h"><h2 id="progH">Your projects</h2><a href="#projects">See all projects</a></div>
-          <ul class="db-progress" id="dbProgress"></ul>
-        </section>
         <section class="db-panel db-glass" id="activity" aria-labelledby="actH">
           <div class="db-panel-h"><h2 id="actH">Recent activity</h2></div>
           <ul class="db-feed" id="dbFeed"></ul>
+        </section>
+        <section class="db-panel db-glass" id="next" aria-labelledby="nextH">
+          <div class="db-panel-h"><h2 id="nextH">Up next</h2><span class="db-count" id="nextCount"></span></div>
+          <ul class="db-tasks" id="dbTasks"></ul>
+          <button type="button" class="db-btn db-more" id="dbMoreTasks" hidden></button>
         </section>
       </div>
     </section>
@@ -212,7 +221,7 @@
             <p class="db-sub">Each project's details, punch list and daily logs.</p>
           </div>
           <label class="db-search"><span class="sr-only">Search projects</span><input type="search" id="projSearch" placeholder="Search by lot, community or address"></label>
-          <a class="db-btn db-btn--main" id="newProject" href="allLists.html?new=1">New punch list</a>
+          <a class="db-btn db-btn--main" id="newProject" href="new-project.html">New project</a>
         </div>
         <div class="db-projects" id="dbProjects"></div>
       </div>
