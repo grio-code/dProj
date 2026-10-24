@@ -1,3 +1,4 @@
+ /* ©Gianna G. Dimperio 2026 */
  /* Keep the content below the fixed top bar (same rule as the other pages) */
   .wrap {
     padding-top: calc(var(--nav-h, 72px) + env(safe-area-inset-top, 0px) + 16px);

@@ -1,3 +1,4 @@
+// ©Gianna G. Dimperio 2026 //
 // ================= CONSTANTS AND DEFAULTS =================
 
 // Starting list of trades (the subcontractor types an item can be assigned to)
@@ -9,7 +10,7 @@ const DEFAULT_TRADES = [
   "Damp Proofing",
   "Sewer & Water",
   "Flatwork",
-  "Structual Steel",
+  "Structural Steel",
   "Rough Material",
   "Truss where applicable",
   "Framing Labor",

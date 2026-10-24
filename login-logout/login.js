@@ -1,3 +1,4 @@
+// ©Gianna G. Dimperio 2026
 (() => {
   if (!firebase.apps.length) firebase.initializeApp(window.FIREBASE_CONFIG);
   const auth = firebase.auth();

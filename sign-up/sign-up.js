@@ -1,3 +1,4 @@
+// ©Gianna G. Dimperio 2026
 // Create-a-workspace wizard (modeled on Slack's flow):
 //   1 Email  ->  2 Verify (emailed link)  ->  3 Name the workspace  ->  4 Profile  ->  5 Invite teammates
 // People who arrive from an invite (signup.html?w=WORKSPACE_ID) skip steps 3 and 5 and join that workspace instead.

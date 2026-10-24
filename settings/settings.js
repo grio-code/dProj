@@ -1,3 +1,4 @@
+// ©Gianna G. Dimperio 2026
 // Settings page: your profile, the workspace, its members, and (for admins) admin controls.
 //
 // Reads / writes the same Firestore data the sign-up wizard creates:

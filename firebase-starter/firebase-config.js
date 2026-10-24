@@ -1,3 +1,4 @@
+// ©Gianna G. Dimperio 2026
 // Firebase settings for Integrate Software (project: integrate-software).
 // This is the plain-script version of the config. The "import ... from 'firebase/app'" version Firebase shows
 // only works with a build tool (npm), and this app loads Firebase with <script> tags in allLists.html instead.

@@ -1,3 +1,4 @@
+// ©Gianna G. Dimperio 2026
 // New project page (new-project.html). Opened from "New Project" in the bottom dock's + menu.
 // With ?edit={projectId} the same page edits an existing project instead (opened from "Edit project" on the project's page).
 //

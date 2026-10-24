@@ -1,3 +1,4 @@
+// ©Gianna G. Dimperio 2026
 // Top-bar sign-in state, shared by every page.
 // Signed in, the bar reads:   INTEGRATE / [workspace logo] Workspace name   |   [photo] Hello, Name
 // (Sign out lives at the bottom of settings.html. The dashboard on index.html hides this bar and shows its own sidebar.)

@@ -1,3 +1,4 @@
+// ©Gianna G. Dimperio 2026
 // Workspace dashboard: what index.html shows once someone is signed in.
 //
 // Projects hold punch lists. A project is made on new-project.html; its punch lists are jobs with projectId set,
