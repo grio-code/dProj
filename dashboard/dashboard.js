@@ -1,4 +1,5 @@
 // ©Gianna G. Dimperio 2026
+
 // Workspace dashboard: what index.html shows once someone is signed in.
 //
 // Projects hold punch lists. A project is made on new-project.html; its punch lists are jobs with projectId set,
@@ -247,13 +248,10 @@
 
   function renderAll() {
     const a = analyze();
-    renderPicker(a);
-    renderBrief(a);
-    renderFacts(a);
-    renderTasks(a);
-    renderFeed(a);
-    renderProgress(a);
-    renderProjects(a);
+    // One section failing (say, a panel missing from index.html) must not stop the others, Projects included
+    [renderPicker, renderBrief, renderFacts, renderTasks, renderFeed, renderProgress, renderProjects].forEach(fn => {
+      try { fn(a); } catch (ex) { console.error(fn.name + ' failed:', ex); }
+    });
     route();
   }
 
@@ -391,6 +389,7 @@
   // Your projects (dashboard): each project's progress across all of its punch lists
   function renderProgress(a) {
     const ul = $('dbProgress');
+    if (!ul) return; // this page has no "Your projects" panel
     ul.textContent = '';
     if (!a.projects.length) {
       ul.appendChild(el('li', 'db-empty', st.projectsFailed ? 'Projects couldn’t load. Republish the Firestore rules, then refresh.' : 'Your projects appear here with how close each one is to done.'));

@@ -19,7 +19,6 @@
 <link href="nav-bar/nav.css" rel="stylesheet">
 <link href="home/index.css" rel="stylesheet">
 <link href="dashboard/dashboard.css?v=5" rel="stylesheet">
-<script src="dashboard/dashboard.js?v=5" defer></script>
 <!-- If this browser was signed in last time, show the dashboard (not the marketing page) while Firebase checks -->
 <script>try { if (localStorage.getItem('int-signed-in') === '1') document.documentElement.classList.add('likely-signed-in'); } catch (e) {}</script>
 
@@ -30,6 +29,7 @@
 <script src="firebase-starter/firebase-config.js"></script>
 <script src="nav-bar/nav.js" defer></script>
 <script src="nav-bar/auth-ui.js" defer></script>
+<script src="dashboard/dashboard.js?v=6" defer></script>
 
 
 </head>
@@ -219,6 +219,12 @@
           <button type="button" class="db-btn db-more" id="dbMoreTasks" hidden></button>
         </section>
       </div>
+
+      <section class="db-panel db-glass" id="progress" aria-labelledby="progH">
+        <div class="db-panel-h"><h2 id="progH">Your projects</h2><a href="#projects">See all projects</a></div>
+        <ul class="db-progress" id="dbProgress"></ul>
+      </section>
+    </section>
 
     <!-- Projects: every punch list in the workspace, and one project's details -->
     <section class="db-view" id="v-projects" aria-labelledby="projH" hidden>
