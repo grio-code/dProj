@@ -1,10 +1,10 @@
-// New project page (newProject.html). Opened from "New Project" in the bottom dock's + menu.
+// New project page (new-project.html). Opened from "New Project" in the bottom dock's + menu.
 //
-// A project is the same record My Lists uses for a punch list (jobs/{id}), with a few extra fields,
-// so every new project comes with an empty punch list ready for items:
-//   jobs/{id}  ownerId, workspaceId, name, community, lot, address, description, date (project date),
-//              startDate, endDate, phases: [{ name, start, end }], folderId, openCount, totalCount, createdAt, updatedAt
-// The Firestore rules already allow this: the creator must be signed in and allowed to edit lists in the workspace.
+// Saves a project. Its punch lists are made afterwards from the project's page, and point back to it with projectId:
+//   projects/{id}  ownerId, workspaceId, name, community, lot, address, description, date (project date),
+//                  startDate, endDate, phases: [{ name, start, end }], createdAt, updatedAt
+//   jobs/{listId}  ... projectId: {id}
+// The Firestore rules (firebase-starter/firebase.rules, "projects") let editors create projects.
 (() => {
   'use strict';
   if (!window.firebase) return;
@@ -107,10 +107,10 @@
     const btn = $('npSave');
     btn.disabled = true;
     btn.textContent = 'Creating…';
-    const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6); // same id style as My Lists
+    const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
     const now = new Date().toISOString();
     try {
-      await db.doc('jobs/' + id).set({
+      await db.doc('projects/' + id).set({
         ownerId: st.uid,
         workspaceId: st.wid,
         name,
@@ -122,9 +122,6 @@
         startDate: start || '',
         endDate: end || '',
         phases: phases.map(p => ({ name: p.name, start: p.start || '', end: p.end || '' })),
-        folderId: '',
-        openCount: 0,
-        totalCount: 0,
         createdAt: now,
         updatedAt: now
       });

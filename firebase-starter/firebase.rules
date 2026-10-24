@@ -95,6 +95,21 @@ service cloud.firestore {
       }
     }
 
+    // ---------- projects ----------
+    // A project (made on newProject.html) holds its details and timeline. Its punch lists are jobs with projectId set.
+    // Everyone in the workspace can see projects; editors (admins + members allowed to edit) can create and change them.
+    match /projects/{projectId} {
+      allow get: if isMember(resource.data.workspaceId);
+      allow list: if isMember(resource.data.workspaceId);
+      allow create: if signedIn() && request.resource.data.ownerId == request.auth.uid
+                    && canEditWs(request.resource.data.workspaceId)
+                    && request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 80;
+      allow update: if canEditWs(resource.data.workspaceId)
+                    && request.resource.data.workspaceId == resource.data.workspaceId
+                    && request.resource.data.ownerId == resource.data.ownerId;
+      allow delete: if canEditWs(resource.data.workspaceId);
+    }
+
     // ---------- lists ----------
     // Editors (admins + members allowed to edit) can change anything on a list.
     // Everyone else, including people who open a shared link, can only check items off.

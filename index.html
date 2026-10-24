@@ -17,7 +17,7 @@
 
 <link href="nav-bar/nav.css" rel="stylesheet">
 <link href="home/index.css" rel="stylesheet">
-<link href="dashboard/dashboard.css?v=2" rel="stylesheet">
+<link href="dashboard/dashboard.css?v=3" rel="stylesheet">
 <!-- If this browser was signed in last time, show the dashboard (not the marketing page) while Firebase checks -->
 <script>try { if (localStorage.getItem('int-signed-in') === '1') document.documentElement.classList.add('likely-signed-in'); } catch (e) {}</script>
 
@@ -28,7 +28,7 @@
 <script src="firebase-starter/firebase-config.js"></script>
 <script src="nav-bar/nav.js" defer></script>
 <script src="nav-bar/auth-ui.js" defer></script>
-<script src="dashboard/dashboard.js?v=2" defer></script>
+<script src="dashboard/dashboard.js?v=3" defer></script>
 
 
 </head>
@@ -108,16 +108,16 @@
       <svg class="fn-icon" viewBox="0 0 24 24"><path d="M4 11.2 12 4l8 7.2"/><path d="M6 9.8v9.7h12V9.8"/><path d="M10 19.5v-5h4v5"/></svg>
       <span class="dock-tip">Home</span>
     </a>
-    <a href="allLists.html" aria-label="Lists">
-      <svg class="fn-icon" viewBox="0 0 24 24"><circle cx="5" cy="6.5" r="1.1"/><circle cx="5" cy="12" r="1.1"/><circle cx="5" cy="17.5" r="1.1"/><path d="M9.5 6.5H20M9.5 12H20M9.5 17.5H20"/></svg>
-      <span class="dock-tip">My Lists</span>
+    <a href="index.html#projects" aria-label="My Projects">
+      <svg class="fn-icon" viewBox="0 0 24 24"><path d="M3.5 7.5a2 2 0 0 1 2-2h4l2 2.5h7a2 2 0 0 1 2 2v8.5a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/><path d="M3.5 10.5h17"/></svg>
+      <span class="dock-tip">My Projects</span>
     </a>
     <button class="dock-fab" id="dockFab" aria-label="Create" aria-expanded="false" aria-controls="dockMenu">
       <svg class="fn-icon" viewBox="0 0 24 24" style="stroke-width:2"><path d="M12 5v14M5 12h14"/></svg>
     </button>
   </div>
   <div class="dock-menu" id="dockMenu" role="menu">
-    <button role="menuitem" onclick="location.href='new-Project.html'">New Project</button>
+    <button role="menuitem" onclick="location.href='new-project.html'">New Project</button>
     <button role="menuitem" onclick="location.href='allLists.html?new=1'">New Punch List</button>
   </div>
 </nav>
@@ -158,17 +158,17 @@
 <div class="db" id="db">
   <aside class="db-side">
     <div class="db-jobs db-glass">
-      <label for="dbJob">Job</label>
+      <label for="dbJob">Project</label>
       <div class="db-select">
         <select id="dbJob">
-          <option value="">All jobs</option>
+          <option value="">All projects</option>
         </select>
       </div>
-      <a class="db-btn db-btn--main db-newproj" id="dbNewProj" href="new-Project.html">New project</a>
+      <a class="db-btn db-btn--main db-newproj" id="dbNewProj" href="new-project.html">New project</a>
     </div>
   <nav class="db-nav db-glass" aria-label="Workspace sections">
     <a href="#dashboard" data-view="dashboard"><svg viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="7" height="9" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="5" rx="1.5"/><rect x="13.5" y="11.5" width="7" height="9" rx="1.5"/><rect x="3.5" y="15.5" width="7" height="5" rx="1.5"/></svg>Dashboard</a>
-    <a href="#projects" data-view="projects"><svg viewBox="0 0 24 24"><path d="M3.5 20.5h17"/><path d="M5.5 20.5V9.5l6.5-5 6.5 5v11"/><path d="M10 20.5v-5h4v5"/></svg>Projects</a>
+    <a href="#projects" data-view="projects"><svg viewBox="0 0 24 24"><path d="M3.5 20.5h17"/><path d="M5.5 20.5V9.5l6.5-5 6.5 5v11"/><path d="M10 20.5v-5h4v5"/></svg>My projects</a>
     <hr>
     <a href="#schedule" data-view="schedule"><svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15.5" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>Schedule<span class="soon">Soon</span></a>
     <a href="#files" data-view="files"><svg viewBox="0 0 24 24"><path d="M3.5 7.5a2 2 0 0 1 2-2h4l2 2.5h7a2 2 0 0 1 2 2v8.5a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/></svg>Files</a>
@@ -210,6 +210,11 @@
           <button type="button" class="db-btn db-more" id="dbMoreTasks" hidden></button>
         </section>
       </div>
+
+      <section class="db-panel db-glass" id="progress" aria-labelledby="progH">
+        <div class="db-panel-h"><h2 id="progH">Your projects</h2><a href="#projects">See all projects</a></div>
+        <ul class="db-progress" id="dbProgress"></ul>
+      </section>
     </section>
 
     <!-- Projects: every punch list in the workspace, and one project's details -->
@@ -217,13 +222,14 @@
       <div id="projList">
         <div class="db-head">
           <div>
-            <h2 id="projH">Projects</h2>
-            <p class="db-sub">Each project's details, punch list and daily logs.</p>
+            <h2 id="projH">My projects</h2>
+            <p class="db-sub">Every project in the workspace. Open one to see its details, punch lists and daily logs.</p>
           </div>
-          <label class="db-search"><span class="sr-only">Search projects</span><input type="search" id="projSearch" placeholder="Search by lot, community or address"></label>
+          <label class="db-search"><span class="sr-only">Search projects</span><input type="search" id="projSearch" placeholder="Search by name, lot, community or address"></label>
           <a class="db-btn db-btn--main" id="newProject" href="new-project.html">New project</a>
         </div>
         <div class="db-projects" id="dbProjects"></div>
+        <section class="db-panel db-glass db-loose-box" id="dbLoose" aria-label="Punch lists not in a project" hidden></section>
       </div>
       <div id="projDetail" hidden></div>
     </section>

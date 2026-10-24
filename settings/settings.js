@@ -27,6 +27,7 @@
   const pending = { userPhoto: undefined, wsLogo: undefined }; // undefined = unchanged, '' = removed, data URL = new
 
   // ---------- Helpers ----------
+  $('msg').addEventListener('click', () => { $('msg').hidden = true; }); // tap the message to close it
   function showMsg(text, isError = false) {
     const m = $('msg');
     m.textContent = text || '';
@@ -541,7 +542,7 @@
   const fmtIso = iso => { const d = iso ? new Date(iso) : null; return d && !isNaN(d) ? d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : ''; };
   function jobTitle(j) {
     const desc = (j.description || '').replace(/\s+/g, ' ').trim();
-    return [j.lot && 'Lot ' + j.lot, j.community, desc].filter(Boolean).join(' · ') || 'Untitled punch list';
+    return j.name || [j.lot && 'Lot ' + j.lot, j.community, desc].filter(Boolean).join(' · ') || 'Untitled punch list';
   }
 
   function renderArchive() {

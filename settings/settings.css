@@ -31,8 +31,15 @@ h1 {
   letter-spacing: .01em;
 }
 
+/* Floats near the top of the screen so it's visible wherever you've scrolled to (e.g. Members) */
 .st-msg {
-  margin-bottom: 16px;
+  position: fixed;
+  z-index: 50;
+  top: calc(var(--nav-h, 72px) + env(safe-area-inset-top, 0px) + 12px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(560px, calc(100vw - 32px));
+  box-shadow: 0 12px 30px -12px rgba(0,0,0,.4);
   padding: 10px 14px;
   border: 1px solid var(--done);
   border-left-width: 4px;

@@ -203,6 +203,35 @@ html.signed-in .hero, html.likely-signed-in:not(.auth-ready) .hero { display: no
   mask: linear-gradient(#000 0 0) top / 100% 55% no-repeat;
 }
 
+/* Your projects (dashboard) and a project's punch lists: name, percent, tape, and a line of detail */
+.db-progress, .db-lists { list-style: none; margin: 0; padding: 0; }
+.db-progress li a, .db-lists li a { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px 16px; color: inherit; text-decoration: none; }
+.db-progress li a { padding: 12px 0; border-top: 1px solid var(--rule); }
+.db-progress li:first-child a { border-top: 0; padding-top: 2px; }
+.db-lists { display: grid; gap: 10px; }
+.db-lists li a { padding: 14px 16px; transition: border-color .2s, background .2s; }
+.db-lists li a:hover { border-color: rgba(255, 255, 255, .4); background: var(--glass-hi); }
+:is(.db-progress, .db-lists) li a:hover b { color: var(--amber); }
+:is(.db-progress, .db-lists) li a:focus-visible { outline: 2px solid #fff; outline-offset: 2px; border-radius: 8px; }
+:is(.db-progress, .db-lists) b { font-weight: 600; font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; transition: color .2s; }
+:is(.db-progress, .db-lists) .num { font: 700 18px/1 var(--f-display); color: var(--muted); text-align: right; }
+:is(.db-progress, .db-lists) .db-tape { grid-column: 1 / -1; }
+:is(.db-progress, .db-lists) small { grid-column: 1 / -1; color: var(--faint); font-size: 12px; margin-top: -2px; }
+#progress { margin-bottom: 20px; }
+
+/* Punch lists that aren't in a project yet, each with "Move to project" */
+.db-loose-box { margin-top: 24px; }
+.db-loose-box .db-panel-h { margin-bottom: 2px; }
+.db-loose { list-style: none; margin: 12px 0 0; padding: 0; }
+.db-loose li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; padding: 10px 0; border-top: 1px solid var(--rule); }
+.db-loose li:first-child { border-top: 0; }
+.db-loose-name { display: grid; min-width: 0; color: inherit; text-decoration: none; }
+.db-loose-name b { font-weight: 600; overflow-wrap: anywhere; }
+.db-loose-name span { color: var(--muted); font-size: 13px; }
+.db-loose-name:hover b { color: var(--amber); }
+.db-move { flex: 0 1 240px; min-width: 180px; }
+.db-move select { min-height: 40px; font-size: 14px; }
+
 /* ---------- Recent activity: a timeline ---------- */
 .db-feed { list-style: none; margin: 0; padding: 0; }
 .db-day { margin: 14px 0 6px; color: var(--faint); font-size: 13px; font-weight: 600; }
@@ -342,6 +371,7 @@ html.signed-in .hero, html.likely-signed-in:not(.auth-ready) .hero { display: no
   .db-fact:nth-child(3) { border-left: 0; }
   .db-fact:nth-child(n+3) { border-top: 1px solid var(--rule); }
   .db-wx { width: 100%; }
+  .db-move { flex: 1 1 100%; }
   .db-view h2 { font-size: 26px; }
   .db-panel { padding: 18px 16px 14px; }
   .db-detail-top { grid-template-columns: minmax(0, 1fr); }

@@ -397,6 +397,7 @@ t === sel ? " selected" : ""
 function updateTitle() {
   const m = state.meta;
   const desc = (m.description || "").replace(/\s+/g, " ").trim();
+  document.getElementById("backBtn").textContent = m.projectId ? "‹ Project" : "‹ All Lists"; // ADDED
   document.getElementById("jobTitle").textContent = m.name || [m.community, m.lot, desc].filter(Boolean).join(" - ") || "New List"; // name comes from New Project
 }
 
@@ -817,10 +818,14 @@ document.getElementById("jFolder").addEventListener("change", e => {
 document.getElementById("tipX").addEventListener("click", () => { 
   document.getElementById("tip").hidden = true; uiSave(); 
 });
-document.getElementById("backBtn").addEventListener("click", () => go(null));
+// CHANGED: a punch list that belongs to a project goes back to that project's page on the dashboard
+document.getElementById("backBtn").addEventListener("click", () => {
+  if (state.meta && state.meta.projectId) location.href = "index.html#projects/" + encodeURIComponent(state.meta.projectId);
+  else go(null);
+});
 // CHANGED: the "New list" code now lives in a function so it can be used from two places: the main "New list" button
 // (no folder) and the "New list here" link inside a folder. Creates a list with a random id and today's date, then opens it.
-function createJob(folderId) {
+function createJob(folderId, projectId) { // projectId: the project this punch list belongs to (from a project page)
   if (fs && !uid) { location.href = "login.html"; return; } // ADDED: must be signed in to make a list
   if (fs && !wid) { location.href = "signup.html"; return; } // ADDED: and must have a workspace
   if (!canEdit) { toast("Only editors can create lists. Ask a workspace admin for editing access."); if (!jobId) showJobs(); return; } // ADDED
@@ -835,8 +840,18 @@ function createJob(folderId) {
     lot: "", 
     description: "", // ADDED
     folderId: folderId || "", 
+    projectId: projectId || "", // ADDED: which project this punch list is part of
     createdAt: new Date().toISOString() 
   }; // ADDED: folderId
+  if (fs && projectId) {
+    // Fill in the community, lot and address from the project so they don't have to be typed again
+    fs.doc("projects/" + projectId).get().then(p => {
+      if (!p.exists) return;
+      const pr = p.data(), fill = {};
+      ["community", "lot", "address"].forEach(k => { if (pr[k]) fill[k] = pr[k]; });
+      if (Object.keys(fill).length) return fs.doc("jobs/" + id).set(fill, { merge: true });
+    }).catch(e => console.error("Couldn't copy the project details:", e));
+  }
   if (fs) { 
     fs.doc("jobs/" + id).set(meta).catch(e => {
       console.error("Create list failed:", e);
@@ -1492,8 +1507,9 @@ function boot() {
   loadSettings();
   // If we arrived from the dock's "New List" button, create a list right away and open it
   if (new URLSearchParams(location.search).get("new") === "1") {
+    const projectId = new URLSearchParams(location.search).get("project") || ""; // ADDED: "New punch list" on a project page
     history.replaceState(null, "", location.pathname); // clear ?new=1 so a refresh doesn't make another list
-    createJob("");                                     // makes the list, adds it to All Lists, and opens it
+    createJob("", projectId);                          // makes the list, adds it to All Lists, and opens it
   } else {
     route();
   }

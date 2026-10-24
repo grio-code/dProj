@@ -1,21 +1,26 @@
 // Workspace dashboard: what index.html shows once someone is signed in.
 //
-// Left column:  the Job picker (every project in the workspace), "New project", and the section menu.
-// Dashboard:    greeting with today's weather, a one-line summary, workspace facts,
-//               Needs your attention (coming soon), Recent activity, and Up next (every open punch item).
-// Projects:     a card per project, and one project's page with its details, timeline, punch list and daily logs.
+// Projects hold punch lists. A project is made on new-project.html; its punch lists are jobs with projectId set,
+// and a project's progress is all of its punch lists added together.
 //
-// Reads the same Firestore data as My Lists (all-lists/allLists.js):
+// Left column:  the Project picker, "New project", and the section menu.
+// Dashboard:    greeting with today's weather, a one-line summary, workspace facts, Needs your attention (coming soon),
+//               Recent activity, Up next (every open punch item) and Your projects (progress across each project's lists).
+// Projects:     a card per project (index.html#projects, the dock's "My Projects"), punch lists not in a project yet,
+//               and one project's page with its details, timeline, punch lists and daily logs.
+//
+// Firestore data:
 //   users/{uid}/profile/info                 name, workspaceId
 //   workspaces/{wid}                         name, ownerId
 //   workspaces/{wid}/members/{uid}           displayName, email, canEdit, admin
-//   jobs (workspaceId == wid)                name, lot, community, address, description, date, startDate, endDate, phases,
-//                                            openCount, totalCount, createdAt, updatedAt, archived
+//   projects (workspaceId == wid)            name, community, lot, address, description, date, startDate, endDate, phases, createdAt, updatedAt
+//   jobs (workspaceId == wid)                the punch lists: projectId, lot, community, description, openCount, totalCount, createdAt, updatedAt, archived
 //   jobs/{id}/custom/{itemId}                text, room, trade, createdAt         (the punch items)
 //   jobs/{id}/items/{itemId}                 done, doneAt, signedBy, trade        (their status)
 //   jobs/{id}/rooms/{roomId}                 name
 //   jobs/{id}/hidden/{roomId}                hidden
-// Nothing here writes to Firestore. Weather comes from Open-Meteo (free, no key), using the browser's location.
+// The only write is "Move to project" for a punch list that isn't in a project yet (jobs/{id}.projectId).
+// Weather comes from Open-Meteo (free, no key), using the browser's location.
 (() => {
   'use strict';
   if (!window.firebase) return;
@@ -28,10 +33,13 @@
 
   const DAY = 864e5;
   const NEARLY_DONE = 3;       // this few left = "is N items from done" in the summary
-  const MAX_DETAIL_JOBS = 40;  // read items for at most this many projects (most recent first)
+  const MAX_DETAIL_JOBS = 60;  // read items for at most this many punch lists (most recent first)
   const TASKS_SHOWN = 8;       // open items shown in Up next before "Show all"
 
-  const st = { user: null, profile: {}, wid: '', ws: {}, members: [], jobs: [], canEdit: false, loaded: false, allTasks: false };
+  const st = {
+    user: null, profile: {}, wid: '', ws: {}, members: [], projects: [], jobs: [], loose: [],
+    canEdit: false, loaded: false, allTasks: false, projectsFailed: false
+  };
 
   // ---------- Small helpers ----------
   function el(tag, cls, text) {
@@ -67,27 +75,30 @@
   const parseDay = s => { const d = s ? new Date(s + (s.length === 10 ? 'T12:00' : '')) : null; return d && !isNaN(d) ? d : null; };
   const fmtDay = s => { const d = parseDay(s); return d ? d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : '—'; };
   const fmtShort = s => { const d = parseDay(s); return d ? d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : ''; };
-  // Project name from New Project, otherwise the title My Lists uses: "Lot 12 · Oakwood · Final walk"
-  function jobTitle(j) {
+  const cut = (s, n) => s.length > n ? s.slice(0, n - 2).trim() + '…' : s;
+  // A punch list's title, the same one My Lists shows: "Lot 12 · Oakwood · Final walk"
+  function listTitle(j) {
     if (j.name) return j.name;
     const desc = (j.description || '').replace(/\s+/g, ' ').trim();
     return [j.lot && 'Lot ' + j.lot, j.community, desc].filter(Boolean).join(' · ') || 'Untitled punch list';
   }
-  // A short name for sentences
-  function shortName(j) {
-    if (j.name) return j.name.length > 32 ? j.name.slice(0, 30).trim() + '…' : j.name;
+  function listShort(j) {
+    if (j.name) return cut(j.name, 32);
+    const desc = (j.description || '').replace(/\s+/g, ' ').trim();
+    if (desc) return cut(desc, 32);
     if (j.lot) return 'Lot ' + j.lot;
-    if (j.community) return j.community;
-    const t = jobTitle(j);
-    return t.length > 28 ? t.slice(0, 26).trim() + '…' : t;
+    return cut(listTitle(j), 28);
   }
+  const projName = p => p.name || [p.lot && 'Lot ' + p.lot, p.community].filter(Boolean).join(' · ') || 'Untitled project';
+  const projShort = p => cut(projName(p), 32);
   const listUrl = id => 'allLists.html?job=' + encodeURIComponent(id);
   const projUrl = id => '#projects/' + encodeURIComponent(id);
+  const projOf = j => j.projectId ? st.projects.find(p => p.id === j.projectId) || null : null;
   function memberName(uid) {
     const m = st.members.find(x => x.id === uid);
     return m ? (m.displayName || m.email || 'Someone') : 'Someone';
   }
-  const trim = (s, n = 60) => { s = String(s || '').replace(/\s+/g, ' ').trim(); return s.length > n ? s.slice(0, n - 2).trim() + '…' : s; };
+  const trim = (s, n = 60) => cut(String(s || '').replace(/\s+/g, ' ').trim(), n);
   let toastTimer;
   function toast(text) {
     const t = $('dbToast');
@@ -99,7 +110,8 @@
   const ICON = {
     check: '<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
     plus: '<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>',
-    list: '<svg viewBox="0 0 24 24"><path d="M8 7h11M8 12h11M8 17h11M4.5 7h.01M4.5 12h.01M4.5 17h.01"/></svg>'
+    list: '<svg viewBox="0 0 24 24"><path d="M8 7h11M8 12h11M8 17h11M4.5 7h.01M4.5 12h.01M4.5 17h.01"/></svg>',
+    folder: '<svg viewBox="0 0 24 24"><path d="M3.5 7.5a2 2 0 0 1 2-2h4l2 2.5h7a2 2 0 0 1 2 2v8.5a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/></svg>'
   };
 
   // ---------- Load ----------
@@ -119,19 +131,34 @@
     const me = st.members.find(m => m.id === user.uid) || {};
     st.canEdit = st.ws.ownerId === user.uid || me.admin === true || me.canEdit === true;
 
-    const js = await db.collection('jobs').where('workspaceId', '==', st.wid).get();
+    const [ps, js] = await Promise.all([
+      db.collection('projects').where('workspaceId', '==', st.wid).get().catch(e => { console.error('Projects:', e); st.projectsFailed = true; return { docs: [] }; }),
+      db.collection('jobs').where('workspaceId', '==', st.wid).get()
+    ]);
+    st.projects = ps.docs.map(d => ({ id: d.id, ...d.data() })).filter(x => !x.archived);
     st.jobs = js.docs.map(d => ({ id: d.id, ...d.data() })).filter(j => !j.archived)
       .map(j => Object.assign(j, { _items: null, _last: Math.max(toMs(j.updatedAt), toMs(j.createdAt)) }))
       .sort((a, b) => b._last - a._last);
+    link_();
 
     renderHello();
-    renderAll(); // first pass from the project records alone, so the page fills in fast
+    renderAll(); // first pass from the saved counts, so the page fills in fast
     await loadItems(st.jobs.slice(0, MAX_DETAIL_JOBS));
     st.loaded = true;
+    link_();
     renderAll();
   }
 
-  // Read each project's items, statuses and rooms. One failing project doesn't stop the others.
+  // Attach each punch list to its project; lists without a (known) project are "loose"
+  function link_() {
+    st.projects.forEach(p => { p._lists = []; });
+    st.loose = [];
+    st.jobs.forEach(j => { const p = projOf(j); p ? p._lists.push(j) : st.loose.push(j); });
+    st.projects.forEach(p => { p._last = Math.max(toMs(p.updatedAt), toMs(p.createdAt), ...p._lists.map(j => j._last)); });
+    st.projects.sort((a, b) => b._last - a._last);
+  }
+
+  // Read each punch list's items, statuses and rooms. One failing list doesn't stop the others.
   async function loadItems(jobs) {
     await Promise.all(jobs.map(async j => {
       try {
@@ -148,19 +175,26 @@
             };
           });
         j._items.forEach(it => { j._last = Math.max(j._last, it.doneAt, it.createdAt); });
-      } catch (e) { console.error('Could not read project ' + j.id, e); }
+      } catch (e) { console.error('Could not read punch list ' + j.id, e); }
     }));
   }
 
-  // Open and total counts: worked out from the items when we have them, otherwise the counts saved on the project
-  function counts(j) {
+  // Open and total items on one punch list: worked out from its items when we have them, otherwise its saved counts
+  function listCounts(j) {
     if (j._items) return { open: j._items.filter(i => !i.done).length, total: j._items.length };
     return { open: typeof j.openCount === 'number' ? j.openCount : 0, total: j.totalCount || 0 };
   }
+  // A project's progress is every punch list in it added together
+  function projCounts(p) {
+    const c = (p._lists || []).reduce((s, j) => { const x = listCounts(j); s.open += x.open; s.total += x.total; return s; }, { open: 0, total: 0 });
+    c.pct = c.total ? Math.round((c.total - c.open) / c.total * 100) : 0;
+    c.lists = (p._lists || []).length;
+    return c;
+  }
 
   function analyze() {
-    const jobs = st.jobs.map(j => { const c = counts(j); return { j, ...c, pct: c.total ? Math.round((c.total - c.open) / c.total * 100) : 0 }; });
-    const openTotal = jobs.reduce((s, x) => s + x.open, 0);
+    const projects = st.projects.map(p => ({ p, ...projCounts(p) }));
+    const openTotal = st.jobs.reduce((s, j) => s + listCounts(j).open, 0);
     const weekAgo = Date.now() - 7 * DAY;
     const signedWeek = st.jobs.reduce((s, j) => s + (j._items || []).filter(i => i.done && i.doneAt >= weekAgo).length, 0);
 
@@ -177,11 +211,12 @@
         if (i.createdAt) events.push({ t: i.createdAt, kind: 'added', what: i.text, job: j });
       });
       const c = toMs(j.createdAt);
-      if (c) events.push({ t: c, kind: 'created', who: memberName(j.ownerId), job: j });
+      if (c) events.push({ t: c, kind: 'list', who: memberName(j.ownerId), job: j });
     });
+    st.projects.forEach(p => { const c = toMs(p.createdAt); if (c) events.push({ t: c, kind: 'project', who: memberName(p.ownerId), proj: p }); });
     events.sort((a, b) => b.t - a.t);
 
-    return { jobs, openTotal, signedWeek, tasks, events: events.slice(0, 10) };
+    return { projects, openTotal, signedWeek, tasks, events: events.slice(0, 10) };
   }
 
   // ---------- Render ----------
@@ -198,43 +233,44 @@
 
   function renderAll() {
     const a = analyze();
-    renderJobPicker(a);
+    renderPicker(a);
     renderBrief(a);
     renderFacts(a);
     renderTasks(a);
     renderFeed(a);
+    renderProgress(a);
     renderProjects(a);
     route();
   }
 
-  // Job picker: every project, newest activity first
-  function renderJobPicker(a) {
+  // Project picker: projects only (their punch lists are on each project's page)
+  function renderPicker(a) {
     const sel = $('dbJob');
     const keep = sel.value;
     sel.textContent = '';
-    sel.appendChild(new Option(a.jobs.length ? 'All jobs (' + a.jobs.length + ')' : 'No jobs yet', ''));
-    a.jobs.forEach(x => sel.appendChild(new Option(jobTitle(x.j) + (x.open ? '  (' + x.open + ' open)' : ''), x.j.id)));
+    sel.appendChild(new Option(a.projects.length ? 'All projects (' + a.projects.length + ')' : 'No projects yet', ''));
+    a.projects.forEach(x => sel.appendChild(new Option(projName(x.p) + (x.open ? '  (' + x.open + ' open)' : ''), x.p.id)));
     sel.value = keep;
     if (sel.value !== keep) sel.value = '';
     $('dbNewProj').hidden = !st.canEdit;
   }
   $('dbJob').addEventListener('change', e => { location.hash = e.target.value ? 'projects/' + encodeURIComponent(e.target.value) : 'dashboard'; });
 
-  // One sentence: how much is open, and what's closest to done. Parts that point somewhere are links.
+  // One sentence: how much is open, and which project is closest to done. Parts that point somewhere are links.
   function renderBrief(a) {
     const b = $('dbBrief');
     b.textContent = '';
     b.classList.remove('is-loading');
     const parts = [];
     const add = (text, href) => parts.push({ text, href });
-    if (!a.jobs.length) {
+    if (!a.projects.length && !st.jobs.length) {
       add('Your workspace is ready. ');
-      add(st.canEdit ? 'Create your first project.' : 'Projects will show up here once an editor creates one.', st.canEdit ? 'newProject.html' : null);
+      add(st.canEdit ? 'Create your first project.' : 'Projects will show up here once an editor creates one.', st.canEdit ? 'new-project.html' : null);
     } else {
       if (a.openTotal) { add(plural(a.openTotal, 'item'), '#next'); add(a.openTotal === 1 ? ' is still open' : ' are still open'); }
       else add('Every punch item is signed off');
-      const close = a.jobs.filter(x => x.open > 0 && x.open <= NEARLY_DONE && x.total > 0).sort((x, y) => x.open - y.open)[0];
-      if (close) { add(', and '); add(shortName(close.j), listUrl(close.j.id)); add(' is ' + plural(close.open, 'item') + ' from done.'); }
+      const close = a.projects.filter(x => x.open > 0 && x.open <= NEARLY_DONE).sort((x, y) => x.open - y.open)[0];
+      if (close) { add(', and '); add(projShort(close.p), projUrl(close.p.id)); add(' is ' + plural(close.open, 'item') + ' from done.'); }
       else add('.');
     }
     parts.forEach(p => b.appendChild(p.href ? link(p.href, null, p.text) : document.createTextNode(p.text)));
@@ -242,11 +278,17 @@
   }
 
   function renderFacts(a) {
-    $('fProjects').textContent = a.jobs.length;
+    $('fProjects').textContent = a.projects.length;
     $('fOpen').textContent = a.openTotal;
     $('fOpenBox').classList.toggle('is-hot', a.openTotal > 0);
     $('fSigned').textContent = st.loaded ? a.signedWeek : '–';
     $('fTeam').textContent = st.members.length;
+  }
+
+  // Where an item lives: room · punch list · project
+  function whereOf(t) {
+    const p = projOf(t.job);
+    return [t.roomName, listShort(t.job), p && projShort(p), t.trade].filter(Boolean).join(' · ');
   }
 
   // Up next: open punch items, each linking to its punch list
@@ -258,7 +300,7 @@
     more.hidden = true;
     if (!st.loaded) { ul.appendChild(el('li', 'db-empty', 'Loading open tasks…')); return; }
     if (!a.tasks.length) {
-      ul.appendChild(el('li', 'db-empty', a.jobs.length ? 'No open tasks. Every punch item is signed off.' : 'Open punch items show up here once your projects have them.'));
+      ul.appendChild(el('li', 'db-empty', st.jobs.length ? 'No open tasks. Every punch item is signed off.' : 'Open punch items show up here once your projects have punch lists.'));
       return;
     }
     const shown = st.allTasks ? a.tasks : a.tasks.slice(0, TASKS_SHOWN);
@@ -266,7 +308,7 @@
       const li = el('li');
       const aEl = link(listUrl(t.job.id));
       const box = el('span', 'box'); box.setAttribute('aria-hidden', 'true');
-      aEl.append(box, el('b', null, t.text), el('span', 'where', [t.roomName, shortName(t.job), t.trade].filter(Boolean).join(' · ')));
+      aEl.append(box, el('b', null, t.text), el('span', 'where', whereOf(t)));
       if (t.createdAt) { const age = el('span', 'age', ago(t.createdAt)); age.title = 'Added ' + new Date(t.createdAt).toLocaleString(); aEl.appendChild(age); }
       li.appendChild(aEl);
       ul.appendChild(li);
@@ -278,11 +320,17 @@
   }
   $('dbMoreTasks').addEventListener('click', () => { st.allTasks = !st.allTasks; renderTasks(analyze()); });
 
+  // A link to where a punch list lives: its project's page, or the list itself when it isn't in a project
+  function listLink(j) {
+    const p = projOf(j);
+    return p ? link(projUrl(p.id), null, projShort(p)) : link(listUrl(j.id), null, listShort(j));
+  }
+
   function renderFeed(a) {
     const ul = $('dbFeed');
     ul.textContent = '';
     if (!st.loaded && !a.events.length) { ul.appendChild(el('li', 'db-empty', 'Loading activity…')); return; }
-    if (!a.events.length) { ul.appendChild(el('li', 'db-empty', 'Sign-offs, new items and new projects show up here as your team works.')); return; }
+    if (!a.events.length) { ul.appendChild(el('li', 'db-empty', 'Sign-offs, new items, punch lists and projects show up here as your team works.')); return; }
     let day = '';
     a.events.forEach((e, idx) => {
       const d = dayLabel(e.t);
@@ -291,13 +339,17 @@
       const nextE = a.events[idx + 1];
       if (!nextE || dayLabel(nextE.t) !== d) li.classList.add('is-last');
       const dot = el('span', 'dot');
-      dot.innerHTML = e.kind === 'signed' ? ICON.check : e.kind === 'added' ? ICON.plus : ICON.list;
+      dot.innerHTML = { signed: ICON.check, added: ICON.plus, list: ICON.list, project: ICON.folder }[e.kind];
       const body = el('div');
       const p = el('p');
-      const jl = link(projUrl(e.job.id), null, shortName(e.job));
-      if (e.kind === 'signed') p.append(document.createTextNode(e.who + ' signed off “' + trim(e.what) + '” on '), jl);
-      else if (e.kind === 'added') p.append(document.createTextNode('“' + trim(e.what) + '” added to '), jl);
-      else p.append(document.createTextNode(e.who + ' created '), jl);
+      const T = t => document.createTextNode(t);
+      if (e.kind === 'signed') p.append(T(e.who + ' signed off “' + trim(e.what) + '” on '), listLink(e.job));
+      else if (e.kind === 'added') p.append(T('“' + trim(e.what) + '” added to '), listLink(e.job));
+      else if (e.kind === 'list') {
+        const pr = projOf(e.job);
+        if (pr) p.append(T(e.who + ' added the punch list ' + listShort(e.job) + ' to '), link(projUrl(pr.id), null, projShort(pr)));
+        else p.append(T(e.who + ' started the punch list '), link(listUrl(e.job.id), null, listShort(e.job)));
+      } else p.append(T(e.who + ' created the project '), link(projUrl(e.proj.id), null, projShort(e.proj)));
       const time = el('time', null, ago(e.t));
       time.dateTime = new Date(e.t).toISOString();
       body.append(p, time);
@@ -306,107 +358,177 @@
     });
   }
 
-  function tape(pct, done) {
+  function tape(pct, done, label) {
     const t = el('div', 'db-tape' + (done ? ' is-done' : ''));
     t.setAttribute('role', 'progressbar');
     t.setAttribute('aria-valuemin', '0');
     t.setAttribute('aria-valuemax', '100');
     t.setAttribute('aria-valuenow', String(pct));
+    if (label) t.setAttribute('aria-label', label);
     const i = el('i');
     i.style.setProperty('--p', pct);
     t.appendChild(i);
     return t;
   }
+  const progressText = c => !c.lists ? 'No punch lists yet'
+    : !c.total ? plural(c.lists, 'punch list') + ', no items yet'
+    : (c.open ? plural(c.open, 'open item') + ' of ' + c.total : 'All ' + c.total + ' items signed off') + ' across ' + plural(c.lists, 'punch list');
 
-  // ---------- Projects ----------
+  // Your projects (dashboard): each project's progress across all of its punch lists
+  function renderProgress(a) {
+    const ul = $('dbProgress');
+    ul.textContent = '';
+    if (!a.projects.length) {
+      ul.appendChild(el('li', 'db-empty', st.projectsFailed ? 'Projects couldn’t load. Republish the Firestore rules, then refresh.' : 'Your projects appear here with how close each one is to done.'));
+      return;
+    }
+    a.projects.slice(0, 6).forEach(x => {
+      const li = el('li');
+      const aEl = link(projUrl(x.p.id));
+      aEl.append(el('b', null, projName(x.p)), el('span', 'num', x.total ? x.pct + '%' : '—'),
+        tape(x.pct, x.total > 0 && x.open === 0, projName(x.p) + ' progress'),
+        el('small', null, progressText(x) + (x.p._last ? '. Last activity ' + ago(x.p._last) + '.' : '.')));
+      li.appendChild(aEl);
+      ul.appendChild(li);
+    });
+  }
+
+  // ---------- Projects (My Projects) ----------
   function renderProjects(a) {
     $('newProject').hidden = !st.canEdit;
     const q = ($('projSearch').value || '').trim().toLowerCase();
     const grid = $('dbProjects');
     grid.textContent = '';
-    const shown = a.jobs.filter(x => !q || [jobTitle(x.j), x.j.address, x.j.community, x.j.lot].join(' ').toLowerCase().includes(q));
-    if (!shown.length) {
-      grid.appendChild(el('p', 'db-empty', a.jobs.length ? 'No projects match “' + q + '”.' : (st.canEdit ? 'No projects yet. Use New project to create your first one.' : 'No projects yet.')));
-      return;
-    }
+    const match = (...xs) => !q || xs.join(' ').toLowerCase().includes(q);
+    const shown = a.projects.filter(x => match(projName(x.p), x.p.address, x.p.community, x.p.lot, ...(x.p._lists || []).map(listTitle)));
+    if (st.projectsFailed) grid.appendChild(el('p', 'db-empty', 'Projects couldn’t load: permission denied. Republish the Firestore rules (they now include projects), then refresh.'));
+    else if (!shown.length) grid.appendChild(el('p', 'db-empty', a.projects.length ? 'No projects match “' + q + '”.' : (st.canEdit ? 'No projects yet. Use New project to create your first one.' : 'No projects yet.')));
     shown.forEach(x => {
-      const card = link(projUrl(x.j.id), 'db-proj db-glass');
-      const tag = x.total === 0 ? el('span', 'db-tag', 'No items yet')
+      const card = link(projUrl(x.p.id), 'db-proj db-glass');
+      const tag = !x.lists ? el('span', 'db-tag', 'No punch lists yet')
+        : x.total === 0 ? el('span', 'db-tag', 'No items yet')
         : x.open === 0 ? el('span', 'db-tag is-done', 'Signed off')
         : el('span', 'db-tag is-open', plural(x.open, 'open item'));
-      const t = tape(x.pct, x.total > 0 && x.open === 0);
-      t.setAttribute('aria-label', 'Progress');
       const stat = el('div', 'stat');
       const left = el('span');
-      if (x.total) left.append(el('b', null, x.pct + '%'), document.createTextNode(' done')); else left.textContent = 'No items';
-      stat.append(left, el('span', null, x.j._last ? 'Updated ' + ago(x.j._last) : ''));
-      const where = [x.j.address, x.j.name && [x.j.lot && 'Lot ' + x.j.lot, x.j.community].filter(Boolean).join(', ')].filter(Boolean).join(' · ');
-      card.append(tag, el('h3', null, jobTitle(x.j)), el('div', 'where', where || 'No address yet'), t, stat);
+      if (x.total) left.append(el('b', null, x.pct + '%'), document.createTextNode(' done')); else left.textContent = plural(x.lists, 'punch list');
+      stat.append(left, el('span', null, x.p._last ? 'Updated ' + ago(x.p._last) : ''));
+      const where = [x.p.address, [x.p.lot && 'Lot ' + x.p.lot, x.p.community].filter(Boolean).join(', ')].filter(Boolean).join(' · ');
+      card.append(tag, el('h3', null, projName(x.p)), el('div', 'where', where || 'No address yet'),
+        tape(x.pct, x.total > 0 && x.open === 0, 'Progress'), stat);
       grid.appendChild(card);
     });
+
+    // Punch lists made before projects existed (or whose project was removed): list them so they can be moved into one
+    const box = $('dbLoose');
+    box.textContent = '';
+    const loose = st.loose.filter(j => match(listTitle(j), j.address, j.community, j.lot));
+    box.hidden = !loose.length;
+    if (!loose.length) return;
+    const h = el('div', 'db-panel-h');
+    h.append(el('h3', null, 'Punch lists not in a project'));
+    box.append(h, el('p', 'db-sub', st.canEdit && a.projects.length ? 'Move each one into its project so its progress counts there.' : 'These punch lists aren’t part of a project yet.'));
+    const ul = el('ul', 'db-loose');
+    loose.forEach(j => {
+      const c = listCounts(j);
+      const li = el('li');
+      const a1 = link(listUrl(j.id), 'db-loose-name');
+      a1.append(el('b', null, listTitle(j)), el('span', null, c.total ? plural(c.open, 'open item') + ' of ' + c.total : 'No items yet'));
+      li.appendChild(a1);
+      if (st.canEdit && a.projects.length) li.appendChild(moveSelect(j, a.projects));
+      ul.appendChild(li);
+    });
+    box.appendChild(ul);
   }
   $('projSearch').addEventListener('input', () => renderProjects(analyze()));
 
+  function moveSelect(j, projects) {
+    const wrap = el('div', 'db-select db-move');
+    const sel = el('select');
+    sel.setAttribute('aria-label', 'Move ' + listTitle(j) + ' to a project');
+    sel.appendChild(new Option('Move to project…', ''));
+    projects.forEach(x => sel.appendChild(new Option(projName(x.p), x.p.id)));
+    sel.addEventListener('change', async () => {
+      const pid = sel.value;
+      if (!pid) return;
+      sel.disabled = true;
+      try {
+        await db.doc('jobs/' + j.id).set({ projectId: pid, updatedAt: new Date().toISOString() }, { merge: true });
+        j.projectId = pid;
+        link_();
+        renderAll();
+        toast(listTitle(j) + ' moved to ' + projName(projOf(j)) + '.');
+      } catch (ex) {
+        console.error(ex);
+        sel.value = '';
+        sel.disabled = false;
+        toast(ex && ex.code === 'permission-denied' ? 'Only editors can move punch lists.' : 'Couldn’t move it. Check your connection.');
+      }
+    });
+    wrap.appendChild(sel);
+    return wrap;
+  }
+
   // Timeline: start and target dates, and each phase marked done / in progress / upcoming
-  function timelineBox(j) {
-    const phases = Array.isArray(j.phases) ? j.phases.filter(p => p && p.name) : [];
-    if (!j.startDate && !j.endDate && !phases.length) return null;
+  function timelineBox(p) {
+    const phases = Array.isArray(p.phases) ? p.phases.filter(x => x && x.name) : [];
+    if (!p.startDate && !p.endDate && !phases.length) return null;
     const box = el('section', 'db-timeline db-glass');
     box.appendChild(el('h3', null, 'Timeline'));
     const dl = el('dl', 'db-dl');
     dl.style.margin = '0 0 ' + (phases.length ? '14px' : '0');
     let remain = '';
-    const end = parseDay(j.endDate);
+    const end = parseDay(p.endDate);
     if (end) {
       const days = Math.ceil((end - new Date()) / DAY);
       remain = days > 0 ? plural(days, 'day') + ' left' : days === 0 ? 'Due today' : plural(-days, 'day') + ' past target';
     }
-    [['Start', fmtDay(j.startDate)], ['Target completion', fmtDay(j.endDate)], ['Time left', remain || '—']]
+    [['Start', fmtDay(p.startDate)], ['Target completion', fmtDay(p.endDate)], ['Time left', remain || '—']]
       .forEach(([k, v]) => { const d = el('div'); d.append(el('dt', null, k), el('dd', null, v)); dl.appendChild(d); });
     box.appendChild(dl);
     if (phases.length) {
-      const ul = el('ol', 'db-phases');
+      const ol = el('ol', 'db-phases');
       const today = new Date();
-      phases.forEach(p => {
-        const s = parseDay(p.start), e = parseDay(p.end);
+      phases.forEach(ph => {
+        const s = parseDay(ph.start), e = parseDay(ph.end);
         const li = el('li');
         let state = '';
-        if (e && e < today) { li.classList.add('is-past'); state = ''; }
+        if (e && e < today) li.classList.add('is-past');
         else if (s && s <= today && (!e || e >= today)) { li.classList.add('is-now'); state = 'In progress'; }
-        const dates = [fmtShort(p.start), fmtShort(p.end)].filter(Boolean).join(' – ');
-        li.append(el('b', null, p.name), el('span', null, dates || 'No dates'));
+        const dates = [fmtShort(ph.start), fmtShort(ph.end)].filter(Boolean).join(' – ');
+        li.append(el('b', null, ph.name), el('span', null, dates || 'No dates'));
         if (state) li.appendChild(el('em', null, state));
-        ul.appendChild(li);
+        ol.appendChild(li);
       });
-      box.appendChild(ul);
+      box.appendChild(ol);
     }
     return box;
   }
 
-  // One project's page: details, timeline, then tabs for Punch list and Daily logs
+  // One project's page: details and overall progress, timeline, then tabs for Punch lists and Daily logs
   function renderDetail(id) {
     const box = $('projDetail');
     box.textContent = '';
-    const j = st.jobs.find(x => x.id === id);
-    box.appendChild(link('#projects', 'db-back', '‹ All projects'));
-    if (!j) { box.appendChild(el('p', 'db-empty', st.jobs.length || st.loaded ? 'That project was not found. It may have been archived or deleted.' : 'Loading…')); return; }
-    const c = counts(j), pct = c.total ? Math.round((c.total - c.open) / c.total * 100) : 0;
+    const p = st.projects.find(x => x.id === id);
+    box.appendChild(link('#projects', 'db-back', '‹ My projects'));
+    if (!p) { box.appendChild(el('p', 'db-empty', st.loaded ? 'That project was not found. It may have been deleted.' : 'Loading…')); return; }
+    const c = projCounts(p);
+    const newList = 'allLists.html?new=1&project=' + encodeURIComponent(p.id);
 
     const top = el('div', 'db-detail-top db-glass');
     const head = el('div');
-    head.append(el('h2', null, jobTitle(j)), el('p', 'db-sub', j.address || 'No address yet'));
-    top.append(head, link(listUrl(j.id), 'db-btn db-btn--main', st.canEdit ? 'Open punch list' : 'View punch list'));
-    const t = tape(pct, c.total > 0 && c.open === 0);
-    t.setAttribute('aria-label', 'Punch list progress');
+    head.append(el('h2', null, projName(p)), el('p', 'db-sub', p.address || 'No address yet'));
+    top.appendChild(head);
+    if (st.canEdit) top.appendChild(link(newList, 'db-btn db-btn--main', 'New punch list'));
     const dl = el('dl', 'db-dl');
-    [['Lot', j.lot || '—'], ['Community', j.community || '—'], ['Project date', fmtDay(j.date)],
-     ['Signed off', c.total ? (c.total - c.open) + ' of ' + c.total + ' (' + pct + '%)' : 'No items yet'],
-     ['Last activity', j._last ? ago(j._last) : '—'], ['Created by', memberName(j.ownerId)]]
+    [['Lot', p.lot || '—'], ['Community', p.community || '—'], ['Project date', fmtDay(p.date)],
+     ['Progress', c.total ? (c.total - c.open) + ' of ' + c.total + ' items (' + c.pct + '%)' : '—'],
+     ['Punch lists', String(c.lists)], ['Created by', memberName(p.ownerId)]]
       .forEach(([k, v]) => { const d = el('div'); d.append(el('dt', null, k), el('dd', null, v)); dl.appendChild(d); });
-    top.append(t, dl);
-    if (j.name && j.description) { const n = el('p', 'db-sub', j.description); n.style.gridColumn = '1 / -1'; top.appendChild(n); }
+    top.append(tape(c.pct, c.total > 0 && c.open === 0, 'Project progress across all punch lists'), dl);
+    if (p.description) { const n = el('p', 'db-sub', p.description); n.style.gridColumn = '1 / -1'; top.appendChild(n); }
     box.appendChild(top);
-    const tl = timelineBox(j);
+    const tl = timelineBox(p);
     if (tl) box.appendChild(tl);
 
     // Tabs
@@ -421,58 +543,55 @@
       b.id = 'tab-' + key;
       b.setAttribute('aria-controls', 'panel-' + key);
       tabs.appendChild(b);
-      const p = el('div');
-      p.id = 'panel-' + key;
-      p.setAttribute('role', 'tabpanel');
-      p.setAttribute('aria-labelledby', b.id);
-      panels.appendChild(p);
-      return [b, p];
+      const pn = el('div');
+      pn.id = 'panel-' + key;
+      pn.setAttribute('role', 'tabpanel');
+      pn.setAttribute('aria-labelledby', b.id);
+      panels.appendChild(pn);
+      return [b, pn];
     };
-    const [tPunch, pPunch] = mk('punch', 'Punch list');
+    const [tLists, pLists] = mk('lists', 'Punch lists (' + c.lists + ')');
     const [tLogs, pLogs] = mk('logs', 'Daily logs');
     const select = which => {
-      [[tPunch, pPunch], [tLogs, pLogs]].forEach(([b, p]) => {
+      [[tLists, pLists], [tLogs, pLogs]].forEach(([b, pn]) => {
         const on = b === which;
         b.setAttribute('aria-selected', String(on));
         b.tabIndex = on ? 0 : -1;
-        p.hidden = !on;
+        pn.hidden = !on;
       });
     };
-    tPunch.addEventListener('click', () => select(tPunch));
+    tLists.addEventListener('click', () => select(tLists));
     tLogs.addEventListener('click', () => select(tLogs));
     tabs.addEventListener('keydown', e => {
       if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
-      const to = document.activeElement === tPunch ? tLogs : tPunch;
+      const to = document.activeElement === tLists ? tLogs : tLists;
       select(to); to.focus();
     });
 
-    // Punch list tab: items grouped by room, rooms with the most open items first
-    if (!j._items) pPunch.appendChild(el('p', 'db-empty', st.loaded ? 'Couldn’t load this punch list’s items.' : 'Loading items…'));
-    else if (!j._items.length) pPunch.appendChild(el('p', 'db-empty', 'No punch items yet. Open the punch list to add rooms and items.'));
-    else {
-      const rooms = {};
-      j._items.forEach(i => { (rooms[i.roomName] = rooms[i.roomName] || []).push(i); });
-      const wrap = el('div', 'db-rooms');
-      Object.entries(rooms)
-        .sort((x, y) => y[1].filter(i => !i.done).length - x[1].filter(i => !i.done).length || x[0].localeCompare(y[0]))
-        .forEach(([name, items]) => {
-          const open = items.filter(i => !i.done).length;
-          const sec = el('section', 'db-room db-glass');
-          const h = el('h3', null, name);
-          h.appendChild(el('small', null, open ? open + ' open' : 'All signed off'));
-          const ul = el('ul', 'db-items');
-          items.sort((x, y) => x.done - y.done || x.createdAt - y.createdAt).forEach(i => {
-            const li = el('li', i.done ? 'is-done' : '');
-            const bx = el('span', 'box'); bx.setAttribute('aria-hidden', 'true');
-            const txt = el('span', null, i.text);
-            if (i.done) txt.appendChild(el('span', 'sr-only', ' (signed off' + (i.signedBy ? ' by ' + i.signedBy : '') + ')'));
-            li.append(bx, txt, el('span', 'trade', i.trade));
-            ul.appendChild(li);
-          });
-          sec.append(h, ul);
-          wrap.appendChild(sec);
+    // Punch lists tab: each list with its own progress; open ones first
+    if (!p._lists.length) {
+      const empty = el('div', 'db-soon db-glass');
+      empty.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true">' + ICON.list.replace(/^<svg[^>]*>|<\/svg>$/g, '') + '</svg>';
+      empty.append(el('h3', null, 'No punch lists yet'),
+        el('p', null, st.canEdit ? 'Add a punch list for each walk: pre-drywall, final, buyer orientation. Their progress adds up here.' : 'Punch lists for this project show up here once an editor adds them.'));
+      if (st.canEdit) empty.appendChild(link(newList, 'db-btn db-btn--main', 'New punch list'));
+      pLists.appendChild(empty);
+    } else {
+      const ul = el('ul', 'db-lists');
+      p._lists.map(j => ({ j, ...listCounts(j) }))
+        .sort((x, y) => (y.open > 0) - (x.open > 0) || y.j._last - x.j._last)
+        .forEach(x => {
+          const pct = x.total ? Math.round((x.total - x.open) / x.total * 100) : 0;
+          const li = el('li');
+          const aEl = link(listUrl(x.j.id), 'db-glass');
+          aEl.append(el('b', null, listTitle(x.j)), el('span', 'num', x.total ? pct + '%' : '—'),
+            tape(pct, x.total > 0 && x.open === 0, listTitle(x.j) + ' progress'),
+            el('small', null, (x.total ? (x.open ? plural(x.open, 'open item') + ' of ' + x.total : 'All ' + x.total + ' signed off') : 'No items yet')
+              + (x.j._last ? '. Last activity ' + ago(x.j._last) + '.' : '.')));
+          li.appendChild(aEl);
+          ul.appendChild(li);
         });
-      pPunch.appendChild(wrap);
+      pLists.appendChild(ul);
     }
 
     // Daily logs tab: placeholder until the feature is built
@@ -483,7 +602,7 @@
     pLogs.appendChild(soon);
 
     box.append(tabs, panels);
-    select(tPunch);
+    select(tLists);
   }
 
   // ---------- Sections (from the address) ----------
@@ -494,9 +613,10 @@
     if (!VIEWS.includes(view)) { sub = ''; view = 'dashboard'; } // #next, #activity... are spots on the dashboard
     VIEWS.forEach(v => { $('v-' + v).hidden = v !== view; });
     root.querySelectorAll('.db-nav a').forEach(a => a.dataset.view === view ? a.setAttribute('aria-current', 'page') : a.removeAttribute('aria-current'));
+    const want = view === 'projects' && sub ? sub : '';
     const sel = $('dbJob');
-    sel.value = view === 'projects' && sub ? sub : '';
-    if (sel.value !== (view === 'projects' && sub ? sub : '')) sel.value = '';
+    sel.value = want;
+    if (sel.value !== want) sel.value = '';
     if (view === 'projects') {
       $('projList').hidden = !!sub;
       $('projDetail').hidden = !sub;
