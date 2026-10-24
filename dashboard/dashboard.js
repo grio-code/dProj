@@ -688,7 +688,7 @@
     const h = decodeURIComponent(location.hash.slice(1));
     let [view, sub] = h.split('/');
     if (!VIEWS.includes(view)) { sub = ''; view = 'dashboard'; } // #next, #activity... are spots on the dashboard
-    VIEWS.forEach(v => { $('v-' + v).hidden = v !== view; });
+    VIEWS.forEach(v => { const panel = document.getElementById('v-' + v); if (panel) { panel.hidden = v !== view; panel.style.display = v === view ? 'block' : 'none'; } });
     root.querySelectorAll('.db-nav a').forEach(a => a.dataset.view === view ? a.setAttribute('aria-current', 'page') : a.removeAttribute('aria-current'));
     const sel = $('dbJob');
     sel.value = st.focus;
