@@ -30,7 +30,7 @@
 <script src="firebase-starter/firebase-config.js"></script>
 <script src="nav-bar/nav.js" defer></script>
 <script src="nav-bar/auth-ui.js" defer></script>
-<script src="dashboard/dashboard.js?v=6" defer></script>
+<script src="dashboard/dashboard.js?v=7" defer></script>
 
 
 </head>
@@ -176,7 +176,7 @@
   <nav class="db-nav" aria-label="Workspace sections">
     <a href="#dashboard" data-view="dashboard"><svg viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="7" height="9" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="5" rx="1.5"/><rect x="13.5" y="11.5" width="7" height="9" rx="1.5"/><rect x="3.5" y="15.5" width="7" height="5" rx="1.5"/></svg>Dashboard</a>
     <a href="#projects" data-view="projects"><svg viewBox="0 0 24 24"><path d="M3.5 20.5h17"/><path d="M5.5 20.5V9.5l6.5-5 6.5 5v11"/><path d="M10 20.5v-5h4v5"/></svg>My projects</a>
-    <a href="allLists.html" class="db-nav-lists"><svg viewBox="0 0 24 24"><path d="M8 7h11M8 12h11M8 17h11M4.5 7h.01M4.5 12h.01M4.5 17h.01"/></svg>My lists</a>
+    <a href="allLists.html" class="db-nav-lists"><svg viewBox="0 0 24 24"><path d="M8 7h11M8 12h11M8 17h11M4.5 7h.01M4.5 12h.01M4.5 17h.01"/></svg>All lists</a>
     <hr>
     <a href="#schedule" data-view="schedule"><svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15.5" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>Schedule<span class="soon">Soon</span></a>
     <a href="#files" data-view="files"><svg viewBox="0 0 24 24"><path d="M3.5 7.5a2 2 0 0 1 2-2h4l2 2.5h7a2 2 0 0 1 2 2v8.5a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/></svg>Files<span class="soon">Soon</span></a>
@@ -220,12 +220,6 @@
           <button type="button" class="db-btn db-more" id="dbMoreTasks" hidden></button>
         </section>
       </div>
-
-      <section class="db-panel db-glass" id="progress" aria-labelledby="progH">
-        <div class="db-panel-h"><h2 id="progH">Your projects</h2><a href="#projects">See all projects</a></div>
-        <ul class="db-progress" id="dbProgress"></ul>
-      </section>
-    </section>
 
     <!-- Projects: every punch list in the workspace, and one project's details -->
     <section class="db-view" id="v-projects" aria-labelledby="projH" hidden>

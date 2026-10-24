@@ -23,6 +23,8 @@
 //   jobs/{id}/hidden/{roomId}                hidden
 // Writes: "Move to project" for a punch list that isn't in a project yet (jobs/{id}.projectId), and "Delete project" (admins only).
 // Editing a project happens on new-project.html?edit={id}.
+// The sidebar's Project picker focuses the dashboard on one project (st.focus): the facts, summary, Up next, Recent activity and
+// Your projects panels then show only that project. "All projects" clears it. The choice is kept for the browser session.
 // Weather comes from Open-Meteo (free, no key), using the browser's location.
 (() => {
   'use strict';
@@ -41,7 +43,7 @@
 
   const st = {
     user: null, profile: {}, wid: '', ws: {}, members: [], projects: [], jobs: [], loose: [],
-    canEdit: false, isAdmin: false, loaded: false, allTasks: false, projectsFailed: false
+    canEdit: false, isAdmin: false, focus: '', loaded: false, allTasks: false, projectsFailed: false
   };
 
   // ---------- Small helpers ----------
@@ -144,6 +146,7 @@
       .map(j => Object.assign(j, { _items: null, _last: Math.max(toMs(j.updatedAt), toMs(j.createdAt)) }))
       .sort((a, b) => b._last - a._last);
     link_();
+    try { const f = sessionStorage.getItem('int-focus'); if (f && st.projects.some(p => p.id === f)) st.focus = f; } catch (e) {}
 
     renderHello();
     renderBrand();
@@ -199,18 +202,23 @@
 
   function analyze() {
     const projects = st.projects.map(p => ({ p, ...projCounts(p) }));
-    const openTotal = st.jobs.reduce((s, j) => s + listCounts(j).open, 0);
+    // With a project picked in the sidebar, everything on the dashboard is about that project only
+    const focus = st.focus ? st.projects.find(p => p.id === st.focus) || null : null;
+    if (st.focus && !focus && st.loaded) st.focus = ''; // it was deleted
+    const jobs = focus ? focus._lists : st.jobs;
+    const shown = focus ? projects.filter(x => x.p === focus) : projects;
+    const openTotal = jobs.reduce((s, j) => s + listCounts(j).open, 0);
     const weekAgo = Date.now() - 7 * DAY;
-    const signedWeek = st.jobs.reduce((s, j) => s + (j._items || []).filter(i => i.done && i.doneAt >= weekAgo).length, 0);
+    const signedWeek = jobs.reduce((s, j) => s + (j._items || []).filter(i => i.done && i.doneAt >= weekAgo).length, 0);
 
     // Up next: every open punch item, oldest first (the longest-waiting work comes first)
     const tasks = [];
-    st.jobs.forEach(j => (j._items || []).forEach(i => { if (!i.done) tasks.push({ ...i, job: j }); }));
+    jobs.forEach(j => (j._items || []).forEach(i => { if (!i.done) tasks.push({ ...i, job: j }); }));
     tasks.sort((a, b) => (a.createdAt || Infinity) - (b.createdAt || Infinity));
 
     // Recent activity, newest first
     const events = [];
-    st.jobs.forEach(j => {
+    jobs.forEach(j => {
       (j._items || []).forEach(i => {
         if (i.done && i.doneAt) events.push({ t: i.doneAt, kind: 'signed', who: i.signedBy || 'Someone', what: i.text, job: j });
         if (i.createdAt) events.push({ t: i.createdAt, kind: 'added', what: i.text, job: j });
@@ -218,10 +226,10 @@
       const c = toMs(j.createdAt);
       if (c) events.push({ t: c, kind: 'list', who: memberName(j.ownerId), job: j });
     });
-    st.projects.forEach(p => { const c = toMs(p.createdAt); if (c) events.push({ t: c, kind: 'project', who: memberName(p.ownerId), proj: p }); });
+    (focus ? [focus] : st.projects).forEach(p => { const c = toMs(p.createdAt); if (c) events.push({ t: c, kind: 'project', who: memberName(p.ownerId), proj: p }); });
     events.sort((a, b) => b.t - a.t);
 
-    return { projects, openTotal, signedWeek, tasks, events: events.slice(0, 10) };
+    return { projects, shown, focus, jobs, openTotal, signedWeek, tasks, events: events.slice(0, 10) };
   }
 
   // ---------- Render ----------
@@ -258,7 +266,7 @@
   // Project picker: projects only (their punch lists are on each project's page)
   function renderPicker(a) {
     const sel = $('dbJob');
-    const keep = sel.value;
+    const keep = st.focus;
     sel.textContent = '';
     sel.appendChild(new Option(a.projects.length ? 'All projects (' + a.projects.length + ')' : 'No projects yet', ''));
     a.projects.forEach(x => sel.appendChild(new Option(projName(x.p) + (x.open ? '  (' + x.open + ' open)' : ''), x.p.id)));
@@ -266,7 +274,13 @@
     if (sel.value !== keep) sel.value = '';
     $('dbNewProj').hidden = !st.canEdit;
   }
-  $('dbJob').addEventListener('change', e => { location.hash = e.target.value ? 'projects/' + encodeURIComponent(e.target.value) : 'dashboard'; });
+  // Picking a project focuses the dashboard on it; "All projects" shows everything again
+  $('dbJob').addEventListener('change', e => {
+    st.focus = e.target.value;
+    try { st.focus ? sessionStorage.setItem('int-focus', st.focus) : sessionStorage.removeItem('int-focus'); } catch (ex) {}
+    renderAll();
+    if (location.hash !== '#dashboard') location.hash = '#dashboard';
+  });
 
   // One sentence: how much is open, and which project is closest to done. Parts that point somewhere are links.
   function renderBrief(a) {
@@ -275,7 +289,17 @@
     b.classList.remove('is-loading');
     const parts = [];
     const add = (text, href) => parts.push({ text, href });
-    if (!a.projects.length && !st.jobs.length) {
+    if (a.focus) {
+      const c = a.shown[0];
+      if (!c.lists) add(projName(a.focus) + ' has no punch lists yet.');
+      else if (!st.loaded) add('Checking ' + projName(a.focus) + '…');
+      else {
+        if (a.openTotal) add(plural(a.openTotal, 'item') + (a.openTotal === 1 ? ' is' : ' are') + ' still open on ');
+        else add('Every punch item on ');
+        add(projName(a.focus), projUrl(a.focus.id));
+        add(a.openTotal ? (a.openTotal <= NEARLY_DONE ? ', so it is almost done.' : '.') : ' is signed off.');
+      }
+    } else if (!a.projects.length && !st.jobs.length) {
       add('Your workspace is ready. ');
       add(st.canEdit ? 'Create your first project.' : 'Projects will show up here once an editor creates one.', st.canEdit ? 'new-project.html' : null);
     } else {
@@ -290,7 +314,7 @@
   }
 
   function renderFacts(a) {
-    $('fProjects').textContent = a.projects.length;
+    $('fProjects').textContent = a.shown.length;
     $('fOpen').textContent = a.openTotal;
     $('fOpenBox').classList.toggle('is-hot', a.openTotal > 0);
     $('fSigned').textContent = st.loaded ? a.signedWeek : '–';
@@ -312,7 +336,7 @@
     more.hidden = true;
     if (!st.loaded) { ul.appendChild(el('li', 'db-empty', 'Loading open tasks…')); return; }
     if (!a.tasks.length) {
-      ul.appendChild(el('li', 'db-empty', st.jobs.length ? 'No open tasks. Every punch item is signed off.' : 'Open punch items show up here once your projects have punch lists.'));
+      ul.appendChild(el('li', 'db-empty', a.jobs.length ? 'No open tasks. Every punch item is signed off.' : (a.focus ? 'Open punch items show up here once this project has punch lists.' : 'Open punch items show up here once your projects have punch lists.')));
       return;
     }
     const shown = st.allTasks ? a.tasks : a.tasks.slice(0, TASKS_SHOWN);
@@ -342,7 +366,7 @@
     const ul = $('dbFeed');
     ul.textContent = '';
     if (!st.loaded && !a.events.length) { ul.appendChild(el('li', 'db-empty', 'Loading activity…')); return; }
-    if (!a.events.length) { ul.appendChild(el('li', 'db-empty', 'Sign-offs, new items, punch lists and projects show up here as your team works.')); return; }
+    if (!a.events.length) { ul.appendChild(el('li', 'db-empty', a.focus ? 'Sign-offs, new items and punch lists for this project show up here as your team works.' : 'Sign-offs, new items, punch lists and projects show up here as your team works.')); return; }
     let day = '';
     a.events.forEach((e, idx) => {
       const d = dayLabel(e.t);
@@ -391,11 +415,11 @@
     const ul = $('dbProgress');
     if (!ul) return; // this page has no "Your projects" panel
     ul.textContent = '';
-    if (!a.projects.length) {
+    if (!a.shown.length) {
       ul.appendChild(el('li', 'db-empty', st.projectsFailed ? 'Projects couldn’t load. Republish the Firestore rules, then refresh.' : 'Your projects appear here with how close each one is to done.'));
       return;
     }
-    a.projects.slice(0, 6).forEach(x => {
+    a.shown.slice(0, 6).forEach(x => {
       const li = el('li');
       const aEl = link(projUrl(x.p.id));
       aEl.append(el('b', null, projName(x.p)), el('span', 'num', x.total ? x.pct + '%' : '—'),
@@ -495,6 +519,7 @@
     try {
       await db.doc('projects/' + p.id).delete();
       st.projects = st.projects.filter(x => x.id !== p.id);
+      if (st.focus === p.id) { st.focus = ''; try { sessionStorage.removeItem('int-focus'); } catch (e) {} }
       st.jobs.forEach(j => { if (j.projectId === p.id) j.projectId = ''; }); // local view only; the lists keep a dead link until moved
       link_();
       location.hash = '#projects';
@@ -662,10 +687,9 @@
     if (!VIEWS.includes(view)) { sub = ''; view = 'dashboard'; } // #next, #activity... are spots on the dashboard
     VIEWS.forEach(v => { $('v-' + v).hidden = v !== view; });
     root.querySelectorAll('.db-nav a').forEach(a => a.dataset.view === view ? a.setAttribute('aria-current', 'page') : a.removeAttribute('aria-current'));
-    const want = view === 'projects' && sub ? sub : '';
     const sel = $('dbJob');
-    sel.value = want;
-    if (sel.value !== want) sel.value = '';
+    sel.value = st.focus;
+    if (sel.value !== st.focus) sel.value = '';
     if (view === 'projects') {
       $('projList').hidden = !!sub;
       $('projDetail').hidden = !sub;

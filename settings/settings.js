@@ -1,4 +1,5 @@
 // ©Gianna G. Dimperio 2026
+
 // Settings page: your profile, the workspace, its members, and (for admins) admin controls.
 //
 // Reads / writes the same Firestore data the sign-up wizard creates:
@@ -674,6 +675,26 @@
     document.querySelectorAll('.st-card').forEach(c => { if (c.offsetParent) io.observe(c); });
     mark((location.hash || '#user').slice(1));
   }
+
+  // ---------- Sign out ----------
+  $('signOutBtn').addEventListener('click', async () => {
+    const btn = $('signOutBtn');
+    btn.disabled = true;
+    btn.textContent = 'Signing out…';
+    try {
+      await auth.signOut();
+      try {
+        localStorage.removeItem('int-signed-in');                       // so the home page shows the guest view next time
+        Object.keys(sessionStorage).filter(k => k.startsWith('fnav-info:')).forEach(k => sessionStorage.removeItem(k)); // top-bar name/photo cache
+      } catch (e) {}
+      location.replace('login.html');
+    } catch (ex) {
+      console.error(ex);
+      btn.disabled = false;
+      btn.textContent = 'Sign out';
+      showMsg('Could not sign out. Check your connection and try again.', true);
+    }
+  });
 
   // ---------- Start ----------
   const stop = auth.onAuthStateChanged(user => {
