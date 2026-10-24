@@ -89,8 +89,8 @@ h1 {
 .st-block + .st-block { margin-top: 26px; padding-top: 22px; border-top: 1px dashed var(--rule); }
 
 /* Owner-only bits stay hidden for everyone else (set by settings.js) */
-html:not(.is-owner) .owner-only { display: none !important; }
-html.is-owner .member-only { display: none !important; }
+html:not(.is-admin) .admin-only { display: none !important; }
+html.is-admin .member-only { display: none !important; }
 
 /* ---------- Form fields ---------- */
 .st-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 18px; }
@@ -194,6 +194,7 @@ label.btn:focus-within { outline: 2px solid var(--focus); outline-offset: 2px; }
   text-transform: uppercase;
 }
 .role--owner { background: var(--accent); color: var(--accent-ink); }
+.role--admin { background: var(--ink); color: var(--sheet); }
 .role--pending { background: transparent; border: 1px dashed var(--rule); color: var(--muted); }
 .you { font-weight: 400; color: var(--muted); }
 

@@ -108,7 +108,7 @@ if (window.firebase && cfg.apiKey && !/PASTE/.test(cfg.apiKey)) {
 const authSvc = (fs && firebase.auth) ? firebase.auth() : null;
 let uid = null;
 let wid = null; // ADDED: the signed-in user's workspace. Lists, trades, levels and folders are shared by everyone in it.
-// ADDED: editing permission. Only the workspace owner, and members the owner has given "Can edit lists" in Settings,
+// ADDED: editing permission. Only workspace admins (the owner plus anyone made an admin), and members an admin has given "Can edit lists" in Settings,
 // can change a list (add/edit/remove rooms and items, job details, folders, trades, delete lists).
 // Everyone else, including people who open a shared link, can only check items off. The Firestore rules enforce the same thing.
 // Local-only mode (no Firebase) has nobody to ask, so everything is editable there.
@@ -823,7 +823,7 @@ document.getElementById("backBtn").addEventListener("click", () => go(null));
 function createJob(folderId) {
   if (fs && !uid) { location.href = "login.html"; return; } // ADDED: must be signed in to make a list
   if (fs && !wid) { location.href = "signup.html"; return; } // ADDED: and must have a workspace
-  if (!canEdit) { toast("Only editors can create lists. Ask the workspace owner for editing access."); if (!jobId) showJobs(); return; } // ADDED
+  if (!canEdit) { toast("Only editors can create lists. Ask a workspace admin for editing access."); if (!jobId) showJobs(); return; } // ADDED
   const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
   const today = new Date(); const d = today.getFullYear() + "-" + String(today.getMonth() + 1).padStart(2, "0") + "-" + String(today.getDate()).padStart(2, "0");
   const meta = { 
@@ -1471,7 +1471,7 @@ document.addEventListener("submit", e => {
 // Hide the install tip if it was dismissed before, or if the app is already running from the home screen
 if (uiPrefs().tipHidden || navigator.standalone) document.getElementById("tip").hidden = true;
 ui.openFolders = uiPrefs().openFolders || {}; // ADDED: restore which folders were expanded last time
-// ADDED: owner of the workspace = editor. Other members are editors only if the owner turned on "Can edit lists" for them.
+// ADDED: owner of the workspace = editor. Admins are editors too. Other members are editors only if an admin turned on "Can edit lists" for them.
 // The member record is watched live, so a change in Settings takes effect without reloading.
 async function watchPerms() {
   let ownerId = "";
@@ -1479,7 +1479,7 @@ async function watchPerms() {
   if (ownerId === uid) { canEdit = true; return; }
   await new Promise(resolve => {
     fs.doc("workspaces/" + wid + "/members/" + uid).onSnapshot(snap => {
-      const next = snap.exists && snap.data().canEdit === true;
+      const next = snap.exists && (snap.data().canEdit === true || snap.data().admin === true);
       const changed = next !== canEdit;
       canEdit = next;
       applyPerms();

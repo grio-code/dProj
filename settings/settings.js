@@ -1,9 +1,12 @@
-// Settings page: your profile, the workspace, its members, and (for the owner) admin controls.
+// Settings page: your profile, the workspace, its members, and (for admins) admin controls.
 //
 // Reads / writes the same Firestore data the sign-up wizard creates:
 //   users/{uid}/profile/info            name, username, logo (profile photo), workspaceId
 //   workspaces/{wid}                    name, ownerId, createdAt, logo (company logo, added here)
-//   workspaces/{wid}/members/{uid}      role, displayName, username, email, photo, joinedAt
+//   workspaces/{wid}/members/{uid}      role, displayName, username, email, photo, joinedAt, canEdit, admin
+//
+// Admins: the owner (who created the workspace) plus any member an admin has switched "Admin" on for, e.g. a
+// second founder or CEO. Admins get the same controls as the owner, but nobody can demote or remove the owner.
 //   workspaces/{wid}/invites/{email}    pending invitations
 (() => {
   'use strict';
@@ -20,7 +23,7 @@
   const MAX_INVITES = 25;
   const SIGNUP_URL = new URL('signup.html', location.href).href.split('?')[0];
 
-  const st = { user: null, profile: {}, wid: '', ws: {}, members: [], invites: [], isOwner: false };
+  const st = { user: null, profile: {}, wid: '', ws: {}, members: [], invites: [], isOwner: false, isAdmin: false };
   const pending = { userPhoto: undefined, wsLogo: undefined }; // undefined = unchanged, '' = removed, data URL = new
 
   // ---------- Helpers ----------
@@ -102,11 +105,12 @@
     if (!w.exists) { showMsg('Your workspace couldn’t be found.', true); return; }
     st.ws = w.data();
     st.isOwner = st.ws.ownerId === user.uid;
-    document.documentElement.classList.toggle('is-owner', st.isOwner);
 
     await loadPeople();
     const meRow = st.members.find(m => m.id === user.uid);
-    st.canEdit = st.isOwner || !!(meRow && meRow.canEdit === true); // ADDED: owner and members with "Can edit lists" may unarchive and delete
+    st.isAdmin = st.isOwner || !!(meRow && meRow.admin === true);
+    document.documentElement.classList.toggle('is-admin', st.isAdmin);
+    st.canEdit = st.isAdmin || !!(meRow && meRow.canEdit === true); // ADDED: admins and members with "Can edit lists" may unarchive and delete
     await loadArchive(); // ADDED
     renderAll();
     $('stLayout').hidden = false;
@@ -117,11 +121,22 @@
   async function loadPeople() {
     const ms = await db.collection('workspaces/' + st.wid + '/members').get();
     st.members = ms.docs.map(d => ({ id: d.id, ...d.data() }))
-      .sort((a, b) => (a.role === 'owner' ? -1 : b.role === 'owner' ? 1 : (a.displayName || '').localeCompare(b.displayName || '')));
+      .sort((a, b) => rank(a) - rank(b) || (a.displayName || '').localeCompare(b.displayName || ''));
     try {
       const is = await db.collection('workspaces/' + st.wid + '/invites').get();
       st.invites = is.docs.map(d => ({ id: d.id, ...d.data() }));
     } catch (e) { st.invites = []; }
+  }
+
+  // ---------- Roles ----------
+  const isOwnerRow = m => m.role === 'owner' || m.id === st.ws.ownerId;
+  const isAdminRow = m => isOwnerRow(m) || m.admin === true;
+  const rank = m => isOwnerRow(m) ? 0 : m.admin === true ? 1 : 2; // owner, then admins, then everyone else
+  function roleOf(m) {
+    if (isOwnerRow(m)) return { label: 'Owner', cls: 'role role--owner' };
+    if (m.admin === true) return { label: 'Admin', cls: 'role role--admin' };
+    if (m.canEdit === true) return { label: 'Editor', cls: 'role role--editor' };
+    return { label: 'Member', cls: 'role' };
   }
 
   // ---------- Render ----------
@@ -133,21 +148,25 @@
     $('uName').value = name;
     $('uUser').value = st.profile.username ? '@' + st.profile.username : '';
     $('uEmail').value = st.user.email || '';
-    $('uRole').textContent = st.isOwner ? 'Owner' : me.canEdit ? 'Editor' : 'Member';
-    $('uRole').className = 'role' + (st.isOwner ? ' role--owner' : me.canEdit ? ' role--editor' : '');
+    const r = roleOf(Object.assign({ id: st.user.uid }, me));
+    $('uRole').textContent = r.label;
+    $('uRole').className = r.cls;
     $('uJoined').textContent = (me.joinedAt ? 'Joined ' + fmtDate(me.joinedAt) + '. ' : '')
-      + (st.isOwner || me.canEdit ? 'You can edit lists.' : 'You can check items off. Ask the owner if you need to edit lists.');
+      + (st.isAdmin ? 'You can edit lists and manage the workspace.'
+        : st.canEdit ? 'You can edit lists.' : 'You can check items off. Ask an admin if you need to edit lists.');
     const photo = pending.userPhoto !== undefined ? pending.userPhoto : (st.profile.logo || '');
     setPic($('uPic'), photo, name || st.user.email);
     $('uPhotoRemove').hidden = !photo;
   }
 
   function renderWorkspace() {
-    const owner = st.members.find(m => m.role === 'owner' || m.id === st.ws.ownerId);
+    const owner = st.members.find(isOwnerRow);
+    const admins = st.members.filter(isAdminRow);
     setPic($('wPicView'), st.ws.logo || '', st.ws.name);
     $('wNameView').textContent = st.ws.name || 'Untitled workspace';
-    $('wSub').textContent = st.isOwner ? 'You own this workspace' : 'You’re a member';
+    $('wSub').textContent = st.isOwner ? 'You own this workspace' : st.isAdmin ? 'You’re an admin' : 'You’re a member';
     $('wOwner').textContent = owner ? (owner.displayName || owner.email || '—') : '—';
+    $('wAdmins').textContent = admins.map(m => m.displayName || m.email).filter(Boolean).join(', ') || '—';
     $('wCreated').textContent = fmtDate(st.ws.createdAt);
     $('wCount').textContent = String(st.members.length);
     $('wPending').textContent = String(st.invites.length);
@@ -166,16 +185,18 @@
       if (m.id === st.user.uid) b.appendChild(el('span', 'you', ' (you)')).style.display = 'inline';
       who.appendChild(b);
       who.appendChild(el('span', null, [m.username ? '@' + m.username : '', m.email].filter(Boolean).join(' · ')));
-      const isOwnerRow = m.role === 'owner' || m.id === st.ws.ownerId;
       li.append(pic, who);
-      if (st.isOwner && !isOwnerRow) {
-        // ADDED: the owner decides who can edit lists. Everyone else can only check items off.
-        li.appendChild(editToggle(m));
+      // Admins manage everyone except themselves and the owner (the owner is always an admin)
+      const manage = st.isAdmin && !isOwnerRow(m) && m.id !== st.user.uid;
+      if (manage) {
+        // Admins can always edit lists, so the editing switch only matters for non-admins
+        if (m.admin !== true) li.appendChild(editToggle(m));
+        li.appendChild(adminToggle(m));
       } else {
-        li.appendChild(el('span', 'role' + (isOwnerRow ? ' role--owner' : m.canEdit ? ' role--editor' : ''),
-          isOwnerRow ? 'Owner' : m.canEdit ? 'Editor' : 'Member'));
+        const r = roleOf(m);
+        li.appendChild(el('span', r.cls, r.label));
       }
-      if (st.isOwner && m.id !== st.user.uid) {
+      if (manage) {
         const rm = el('button', 'btn btn--sm btn--danger', 'Remove');
         rm.type = 'button';
         rm.addEventListener('click', () => removeMember(m, rm));
@@ -195,7 +216,7 @@
       who.appendChild(el('b', null, i.email || i.id));
       who.appendChild(el('span', null, 'Invited ' + fmtDate(i.createdAt) + (i.invitedByName ? ' by ' + i.invitedByName : '')));
       li.append(pic, who, el('span', 'role role--pending', 'Pending'));
-      if (st.isOwner) {
+      if (st.isAdmin) {
         const em = i.email || i.id;
         li.appendChild(sendMenu([em]));
         const rv = el('button', 'btn btn--sm btn--quiet', 'Revoke');
@@ -207,7 +228,7 @@
     });
   }
 
-  // ADDED: "Can edit lists" switch on a member's row (owner only)
+  // ADDED: "Can edit lists" switch on a member's row (admins only)
   function editToggle(m) {
     const lab = el('label', 'st-switch');
     lab.title = 'Editors can add, change and remove rooms, items and lists. Others can only check items off.';
@@ -231,8 +252,37 @@
     return lab;
   }
 
+  // "Admin" switch on a member's row (admins only). Use it to give a co-founder or second CEO full control.
+  function adminToggle(m) {
+    const lab = el('label', 'st-switch');
+    lab.title = 'Admins can rename the workspace, change its logo, invite and remove people, choose who can edit lists, and make others admins.';
+    const cb = el('input');
+    cb.type = 'checkbox';
+    cb.checked = m.admin === true;
+    const who = m.displayName || m.email;
+    cb.setAttribute('aria-label', 'Make ' + who + ' an admin');
+    cb.addEventListener('change', async () => {
+      const on = cb.checked;
+      if (on && !confirm('Make ' + who + ' an admin? They’ll have the same control over ' + (st.ws.name || 'this workspace') + ' as you, including adding and removing people and admins.')) { cb.checked = false; return; }
+      if (!on && !confirm('Remove admin access for ' + who + '?')) { cb.checked = true; return; }
+      cb.disabled = true;
+      try {
+        await db.doc('workspaces/' + st.wid + '/members/' + m.id).update({ admin: on });
+        m.admin = on;
+        await loadPeople();
+        renderAll();
+        showMsg(who + (on ? ' is now an admin.' : ' is no longer an admin.'));
+      } catch (ex) {
+        cb.checked = !on;
+        showMsg(friendly(ex, 'Could not change that. Try again.'), true);
+      } finally { cb.disabled = false; }
+    });
+    lab.append(cb, el('span', 'st-switch-ui'), el('span', 'st-switch-text', 'Admin'));
+    return lab;
+  }
+
   function renderAdmin() {
-    if (!st.isOwner) return;
+    if (!st.isAdmin) return;
     $('wName').value = st.ws.name || '';
     const logo = pending.wsLogo !== undefined ? pending.wsLogo : (st.ws.logo || '');
     setPic($('wPic'), logo, st.ws.name);
@@ -309,7 +359,7 @@
   });
 
   // ---------- 4. Admin: invite people ----------
-  // The invitation is a message the owner sends from their own email (or text). We don't rely on Firebase's
+  // The invitation is a message the admin sends from their own email (or text). We don't rely on Firebase's
   // sign-in email for this: on the free Spark plan Firebase sends only 5 sign-in-link emails a day for the whole
   // project, those emails don't mention the workspace, and they often land in spam. Saving the quota also means
   // the invited person's own confirmation email (sent when they open the link and enter their address) goes out.
@@ -438,7 +488,7 @@
 
   $('copyLink').addEventListener('click', () => copyText($('shareLink').value, 'Invite link copied.'));
 
-  // ---------- 3. Members: remove / revoke (owner) ----------
+  // ---------- 3. Members: remove / revoke (admins) ----------
   async function removeMember(m, btn) {
     if (!confirm('Remove ' + (m.displayName || m.email) + ' from ' + (st.ws.name || 'this workspace') + '? They’ll lose access to its lists.')) return;
     try {

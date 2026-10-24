@@ -67,7 +67,7 @@
       <a href="#workspace">Workspace</a>
       <a href="#members">Members</a>
       <a href="#archive">Archive</a>
-      <a href="#admin" class="owner-only">Admin controls</a>
+      <a href="#admin" class="admin-only">Admin controls</a>
     </nav>
 
     <div class="st-main">
@@ -130,19 +130,20 @@
         </div>
         <dl class="st-facts">
           <div><dt>Owner</dt><dd id="wOwner"></dd></div>
+          <div><dt>Admins</dt><dd id="wAdmins"></dd></div>
           <div><dt>Created</dt><dd id="wCreated"></dd></div>
           <div><dt>Members</dt><dd id="wCount"></dd></div>
           <div><dt>Pending invites</dt><dd id="wPending"></dd></div>
           <div class="st-facts-wide"><dt>Workspace ID</dt><dd class="mono" id="wId"></dd></div>
         </dl>
-        <p class="f-hint member-only">Only the workspace owner can change the name and logo.</p>
+        <p class="f-hint member-only">Only admins can change the name and logo.</p>
       </section>
 
       <!-- ============ 3. People in the workspace ============ -->
       <section class="st-card" id="members" aria-labelledby="memH">
         <header class="st-card-h">
           <h2 id="memH">Members</h2>
-          <p>Everyone who has joined, plus people who were invited and haven't joined yet. Members can check items off lists; editors can also add, change and remove things.</p>
+          <p>Everyone who has joined, plus people who were invited and haven't joined yet. Members can check items off lists; editors can also add, change and remove things; admins can also manage the workspace and its people.</p>
         </header>
         <ul class="st-people" id="memberList"></ul>
         <h3 class="st-sub" id="inviteHead" hidden>Invited</h3>
@@ -161,11 +162,11 @@
         <p class="f-hint" id="archiveNote" hidden>Only editors can unarchive or delete.</p>
       </section>
 
-      <!-- ============ 4. Admin controls (owner only) ============ -->
-      <section class="st-card owner-only" id="admin" aria-labelledby="admH">
+      <!-- ============ 4. Admin controls (admins only) ============ -->
+      <section class="st-card admin-only" id="admin" aria-labelledby="admH">
         <header class="st-card-h">
           <h2 id="admH">Admin controls</h2>
-          <p>Only you, as the workspace owner, can see this section.</p>
+          <p>Only admins can see this section. To add another admin, such as a co-founder, switch on “Admin” next to them in Members.</p>
         </header>
 
         <form id="wsForm" class="st-block" novalidate>
